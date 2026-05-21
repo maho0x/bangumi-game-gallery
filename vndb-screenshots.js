@@ -140,6 +140,101 @@
     });
   }
 
+  function getVisibleScreenshots(screenshots) {
+    var showNsfw = localStorage.getItem('vndb_show_nsfw') === '1';
+    if (showNsfw) return screenshots.slice();
+    return screenshots.filter(function (s) { return !isNsfw(s); });
+  }
+
+  function initLightbox(screenshots) {
+    var lb = document.createElement('div');
+    lb.id = 'vndb-lightbox';
+    lb.style.display = 'none';
+    lb.innerHTML = [
+      '<div id="vndb-lb-backdrop"></div>',
+      '<button id="vndb-lb-close">✕</button>',
+      '<button id="vndb-lb-prev">❮</button>',
+      '<button id="vndb-lb-next">❯</button>',
+      '<div id="vndb-lb-content">',
+        '<div id="vndb-lb-loading">加载中…</div>',
+        '<img id="vndb-lb-img" src="" alt="">',
+      '</div>',
+      '<div id="vndb-lb-counter"></div>'
+    ].join('');
+    document.body.appendChild(lb);
+
+    var currentIdx = 0;
+    var visibleList = [];
+    var lbOpen = false;
+
+    function showImage(screenshot) {
+      var img      = document.getElementById('vndb-lb-img');
+      var loading  = document.getElementById('vndb-lb-loading');
+      var counter  = document.getElementById('vndb-lb-counter');
+      img.style.display = 'none';
+      loading.style.display = 'block';
+      counter.textContent = (currentIdx + 1) + ' / ' + visibleList.length;
+      img.onload = function () {
+        loading.style.display = 'none';
+        img.style.display = 'block';
+      };
+      img.src = screenshot.url;
+    }
+
+    function open(visibleIdx) {
+      visibleList = getVisibleScreenshots(screenshots);
+      currentIdx  = visibleIdx;
+      lbOpen      = true;
+      lb.style.display = 'flex';
+      showImage(visibleList[currentIdx]);
+    }
+
+    function close() {
+      lbOpen = false;
+      lb.style.display = 'none';
+    }
+
+    function navigate(delta) {
+      visibleList = getVisibleScreenshots(screenshots);
+      if (!visibleList.length) return;
+      currentIdx = (currentIdx + delta + visibleList.length) % visibleList.length;
+      showImage(visibleList[currentIdx]);
+    }
+
+    document.getElementById('vndb-lb-backdrop').addEventListener('click', close);
+    document.getElementById('vndb-lb-close').addEventListener('click', close);
+    document.getElementById('vndb-lb-prev').addEventListener('click', function () { navigate(-1); });
+    document.getElementById('vndb-lb-next').addEventListener('click', function () { navigate(1); });
+
+    document.addEventListener('keydown', function (e) {
+      if (!lbOpen) return;
+      if (e.key === 'Escape')     close();
+      if (e.key === 'ArrowLeft')  navigate(-1);
+      if (e.key === 'ArrowRight') navigate(1);
+    });
+
+    document.getElementById('vndb-grid').addEventListener('click', function (e) {
+      var thumb = e.target.closest('.vndb-thumb');
+      if (!thumb) return;
+
+      var isNsfwThumb = thumb.classList.contains('vndb-nsfw');
+      var showNsfw    = localStorage.getItem('vndb_show_nsfw') === '1';
+      if (isNsfwThumb && !showNsfw) return;
+
+      var rawIdx = parseInt(thumb.dataset.idx, 10);
+      visibleList = getVisibleScreenshots(screenshots);
+
+      var visibleIdx = 0;
+      var count = 0;
+      for (var i = 0; i < screenshots.length; i++) {
+        if (isNsfw(screenshots[i]) && !showNsfw) continue;
+        if (i === rawIdx) { visibleIdx = count; break; }
+        count++;
+      }
+      open(visibleIdx);
+    });
+  }
+
   function init() {
     if (!/^\/subject\/\d+$/.test(location.pathname)) return;
 
@@ -168,6 +263,7 @@
       }
       renderScreenshots(screenshots);
       initNsfwToggle();
+      initLightbox(screenshots);
     }).catch(function () {
       showError(grid, vndbAnchor.href);
     });

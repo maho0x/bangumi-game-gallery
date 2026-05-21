@@ -228,3 +228,106 @@ describe('NSFW toggle', () => {
     expect(document.getElementById('vndb-nsfw-toggle').textContent).toBe('隐藏 R18');
   });
 });
+
+describe('lightbox', () => {
+  async function setupWithScreenshots(screenshots) {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetch(screenshots || [SFW_SHOT, NSFW_SHOT]);
+    loadComponent();
+    await flushPromises();
+  }
+
+  function clickThumb(idx) {
+    document.querySelectorAll('.vndb-thumb')[idx].click();
+  }
+
+  test('lightbox element is appended to body', async () => {
+    await setupWithScreenshots();
+    expect(document.getElementById('vndb-lightbox')).not.toBeNull();
+  });
+
+  test('lightbox is hidden by default', async () => {
+    await setupWithScreenshots();
+    expect(document.getElementById('vndb-lightbox').style.display).toBe('none');
+  });
+
+  test('clicking SFW thumbnail opens lightbox with full-size URL', async () => {
+    await setupWithScreenshots([SFW_SHOT]);
+    clickThumb(0);
+    const lb = document.getElementById('vndb-lightbox');
+    expect(lb.style.display).not.toBe('none');
+    expect(document.getElementById('vndb-lb-img').src).toBe(SFW_SHOT.url);
+  });
+
+  test('clicking NSFW thumbnail when toggle is off does not open lightbox', async () => {
+    await setupWithScreenshots([NSFW_SHOT]);
+    clickThumb(0);
+    expect(document.getElementById('vndb-lightbox').style.display).toBe('none');
+  });
+
+  test('clicking NSFW thumbnail when toggle is on opens lightbox', async () => {
+    await setupWithScreenshots([NSFW_SHOT]);
+    document.getElementById('vndb-nsfw-toggle').click();
+    clickThumb(0);
+    expect(document.getElementById('vndb-lightbox').style.display).not.toBe('none');
+  });
+
+  test('clicking backdrop closes lightbox', async () => {
+    await setupWithScreenshots([SFW_SHOT]);
+    clickThumb(0);
+    document.getElementById('vndb-lb-backdrop').click();
+    expect(document.getElementById('vndb-lightbox').style.display).toBe('none');
+  });
+
+  test('clicking close button closes lightbox', async () => {
+    await setupWithScreenshots([SFW_SHOT]);
+    clickThumb(0);
+    document.getElementById('vndb-lb-close').click();
+    expect(document.getElementById('vndb-lightbox').style.display).toBe('none');
+  });
+
+  test('ESC key closes lightbox', async () => {
+    await setupWithScreenshots([SFW_SHOT]);
+    clickThumb(0);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(document.getElementById('vndb-lightbox').style.display).toBe('none');
+  });
+
+  test('counter shows correct position', async () => {
+    await setupWithScreenshots([SFW_SHOT, { ...SFW_SHOT, id: 'sf3' }]);
+    clickThumb(0);
+    expect(document.getElementById('vndb-lb-counter').textContent).toBe('1 / 2');
+  });
+
+  test('ArrowRight navigates to next screenshot', async () => {
+    const shot2 = { ...SFW_SHOT, id: 'sf3', url: 'https://s.vndb.org/sf/03/full.jpg', thumbnail: 'https://s.vndb.org/sf/03/th.jpg' };
+    await setupWithScreenshots([SFW_SHOT, shot2]);
+    clickThumb(0);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(document.getElementById('vndb-lb-img').src).toBe(shot2.url);
+    expect(document.getElementById('vndb-lb-counter').textContent).toBe('2 / 2');
+  });
+
+  test('ArrowLeft navigates to previous screenshot', async () => {
+    const shot2 = { ...SFW_SHOT, id: 'sf3', url: 'https://s.vndb.org/sf/03/full.jpg', thumbnail: 'https://s.vndb.org/sf/03/th.jpg' };
+    await setupWithScreenshots([SFW_SHOT, shot2]);
+    clickThumb(1);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    expect(document.getElementById('vndb-lb-img').src).toBe(SFW_SHOT.url);
+  });
+
+  test('navigation wraps from last to first', async () => {
+    const shot2 = { ...SFW_SHOT, id: 'sf3', url: 'https://s.vndb.org/sf/03/full.jpg', thumbnail: 'https://s.vndb.org/sf/03/th.jpg' };
+    await setupWithScreenshots([SFW_SHOT, shot2]);
+    clickThumb(1);
+    document.getElementById('vndb-lb-next').click();
+    expect(document.getElementById('vndb-lb-img').src).toBe(SFW_SHOT.url);
+  });
+
+  test('NSFW images excluded from navigation when toggle is off', async () => {
+    await setupWithScreenshots([SFW_SHOT, NSFW_SHOT]);
+    clickThumb(0);
+    document.getElementById('vndb-lb-next').click();
+    expect(document.getElementById('vndb-lb-counter').textContent).toBe('1 / 1');
+  });
+});
