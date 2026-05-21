@@ -163,6 +163,7 @@
     fetchScreenshots(vndbId).then(function (screenshots) {
       if (!screenshots.length) {
         showEmpty(grid);
+        initNsfwToggle();
         return;
       }
       renderScreenshots(screenshots);
