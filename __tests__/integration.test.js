@@ -61,3 +61,48 @@ test('smoke: component file loads without throwing', () => {
   document.documentElement.innerHTML = DOM_NO_VNDB;
   expect(() => loadComponent()).not.toThrow();
 });
+
+describe('page guard', () => {
+  test('does nothing on non-subject URL', () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    window.location.pathname = '/game/browser';
+    loadComponent();
+    expect(document.getElementById('vndb-screenshot-gallery')).toBeNull();
+  });
+
+  test('does nothing when no VNDB link in #infobox', () => {
+    document.documentElement.innerHTML = DOM_NO_VNDB;
+    loadComponent();
+    expect(document.getElementById('vndb-screenshot-gallery')).toBeNull();
+  });
+
+  test('inserts gallery shell immediately when subject has VNDB link', async () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetch([]);
+    loadComponent();
+    expect(document.getElementById('vndb-screenshot-gallery')).not.toBeNull();
+  });
+
+  test('gallery is inserted after #subject_detail', async () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetch([]);
+    loadComponent();
+    const detail = document.getElementById('subject_detail');
+    const gallery = document.getElementById('vndb-screenshot-gallery');
+    expect(detail.nextSibling).toBe(gallery);
+  });
+
+  test('fetch is called with correct VNDB ID and fields', async () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetch([]);
+    loadComponent();
+    await flushPromises();
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.vndb.org/kana/vn',
+      expect.objectContaining({ method: 'POST' })
+    );
+    const body = JSON.parse(fetch.mock.calls[0][1].body);
+    expect(body.filters).toEqual(['id', '=', 'v26307']);
+    expect(body.fields).toContain('screenshots');
+  });
+});
