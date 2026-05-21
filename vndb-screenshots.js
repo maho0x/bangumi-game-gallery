@@ -222,8 +222,6 @@
       if (isNsfwThumb && !showNsfw) return;
 
       var rawIdx = parseInt(thumb.dataset.idx, 10);
-      visibleList = getVisibleScreenshots(screenshots);
-
       var visibleIdx = 0;
       var count = 0;
       for (var i = 0; i < screenshots.length; i++) {
