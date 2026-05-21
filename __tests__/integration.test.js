@@ -132,3 +132,50 @@ describe('status states', () => {
     expect(document.querySelector('.vndb-error a').href).toContain('vndb.org/v26307');
   });
 });
+
+describe('screenshot rendering', () => {
+  test('renders one thumbnail per screenshot', async () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetch([SFW_SHOT, NSFW_SHOT]);
+    loadComponent();
+    await flushPromises();
+    expect(document.querySelectorAll('.vndb-thumb').length).toBe(2);
+  });
+
+  test('SFW thumbnail has correct src and no nsfw class', async () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetch([SFW_SHOT]);
+    loadComponent();
+    await flushPromises();
+    const thumb = document.querySelector('.vndb-thumb');
+    expect(thumb.classList.contains('vndb-nsfw')).toBe(false);
+    expect(thumb.querySelector('img').src).toBe(SFW_SHOT.thumbnail);
+  });
+
+  test('NSFW thumbnail gets vndb-nsfw class and mask element', async () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetch([NSFW_SHOT]);
+    loadComponent();
+    await flushPromises();
+    const thumb = document.querySelector('.vndb-thumb');
+    expect(thumb.classList.contains('vndb-nsfw')).toBe(true);
+    expect(thumb.querySelector('.vndb-mask')).not.toBeNull();
+    expect(thumb.querySelector('.vndb-mask').textContent).toBe('R18');
+  });
+
+  test('violence >= 2 is also treated as NSFW', async () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    const violentShot = { ...SFW_SHOT, id: 'sf3', sexual: 0, violence: 2 };
+    mockFetch([violentShot]);
+    loadComponent();
+    await flushPromises();
+    expect(document.querySelector('.vndb-thumb').classList.contains('vndb-nsfw')).toBe(true);
+  });
+
+  test('style element is injected into <head>', async () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetch([]);
+    loadComponent();
+    expect(document.getElementById('vndb-styles')).not.toBeNull();
+  });
+});

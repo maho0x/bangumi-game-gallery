@@ -60,6 +60,63 @@
     grid.innerHTML = '<p class="vndb-status">VNDB 暂无截图</p>';
   }
 
+  function isNsfw(screenshot) {
+    return screenshot.sexual >= 2 || screenshot.violence >= 2;
+  }
+
+  function injectStyles() {
+    if (document.getElementById('vndb-styles')) return;
+    var style = document.createElement('style');
+    style.id = 'vndb-styles';
+    style.textContent = [
+      '#vndb-screenshot-gallery { margin-top: 16px; }',
+      '#vndb-screenshot-gallery .subtitle { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }',
+      '#vndb-nsfw-toggle { margin-left: auto; font-size: 12px; padding: 2px 8px; cursor: pointer; border-radius: 3px; }',
+      '#vndb-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }',
+      '.vndb-thumb { position: relative; height: 120px; overflow: hidden; cursor: pointer; border-radius: 3px; background: #f0f0f0; }',
+      '.vndb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }',
+      '.vndb-mask { position: absolute; inset: 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: bold; letter-spacing: 1px; }',
+      '#vndb-grid.show-nsfw .vndb-mask { display: none; }',
+      '.vndb-status { color: #999; font-size: 13px; padding: 8px 0; }',
+      '.vndb-error { color: #c00; }',
+      '#vndb-lightbox { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; }',
+      '#vndb-lb-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.88); }',
+      '#vndb-lb-content { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; min-width: 100px; min-height: 60px; }',
+      '#vndb-lb-img { max-width: 90vw; max-height: 85vh; object-fit: contain; display: none; }',
+      '#vndb-lb-loading { color: #ccc; font-size: 14px; }',
+      '#vndb-lb-close, #vndb-lb-prev, #vndb-lb-next { position: fixed; z-index: 2; background: rgba(255,255,255,0.15); border: none; color: #fff; cursor: pointer; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; display: flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.15s; }',
+      '#vndb-lb-close:hover, #vndb-lb-prev:hover, #vndb-lb-next:hover { background: rgba(255,255,255,0.3); }',
+      '#vndb-lb-close { top: 16px; right: 16px; }',
+      '#vndb-lb-prev { top: 50%; left: 16px; transform: translateY(-50%); }',
+      '#vndb-lb-next { top: 50%; right: 16px; transform: translateY(-50%); }',
+      '#vndb-lb-counter { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); color: #ccc; font-size: 13px; z-index: 2; white-space: nowrap; }'
+    ].join('\n');
+    document.head.appendChild(style);
+  }
+
+  function renderScreenshots(screenshots) {
+    var grid = document.getElementById('vndb-grid');
+    grid.innerHTML = '';
+    screenshots.forEach(function (s, i) {
+      var thumb = document.createElement('div');
+      thumb.className = 'vndb-thumb' + (isNsfw(s) ? ' vndb-nsfw' : '');
+      thumb.dataset.idx = String(i);
+
+      var img = document.createElement('img');
+      img.src = s.thumbnail;
+      img.loading = 'lazy';
+      thumb.appendChild(img);
+
+      if (isNsfw(s)) {
+        var mask = document.createElement('div');
+        mask.className = 'vndb-mask';
+        mask.textContent = 'R18';
+        thumb.appendChild(mask);
+      }
+      grid.appendChild(thumb);
+    });
+  }
+
   function init() {
     if (!/^\/subject\/\d+$/.test(location.pathname)) return;
 
@@ -72,6 +129,8 @@
     var subjectDetail = document.getElementById('subject_detail');
     if (!subjectDetail) return;
 
+    injectStyles();
+
     var gallery = createGalleryShell();
     subjectDetail.parentNode.insertBefore(gallery, subjectDetail.nextSibling);
 
@@ -83,6 +142,7 @@
         showEmpty(grid);
         return;
       }
+      renderScreenshots(screenshots);
     }).catch(function () {
       showError(grid, vndbAnchor.href);
     });
