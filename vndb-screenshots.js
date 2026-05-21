@@ -245,10 +245,12 @@
     var subjectDetail = document.getElementById('subject_detail');
     if (!subjectDetail) return;
 
+    var columnInHomeB = document.getElementById('columnSubjectInHomeB') || subjectDetail.parentNode;
+
     injectStyles();
 
     var gallery = createGalleryShell();
-    subjectDetail.parentNode.insertBefore(gallery, subjectDetail.nextSibling);
+    columnInHomeB.parentNode.insertBefore(gallery, columnInHomeB.nextSibling);
 
     var grid = document.getElementById('vndb-grid');
     showLoading(grid);

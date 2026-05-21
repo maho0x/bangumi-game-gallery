@@ -11,7 +11,9 @@ const DOM_WITH_VNDB = `<head></head><body>
     </li>
   </ul>
   <div id="columnSubjectHomeB">
-    <div id="subject_detail"></div>
+    <div id="columnSubjectInHomeB">
+      <div id="subject_detail"></div>
+    </div>
   </div>
 </body>`;
 
@@ -20,7 +22,9 @@ const DOM_NO_VNDB = `<head></head><body>
     <li><span class="tip">开发: </span>SomeStudio</li>
   </ul>
   <div id="columnSubjectHomeB">
-    <div id="subject_detail"></div>
+    <div id="columnSubjectInHomeB">
+      <div id="subject_detail"></div>
+    </div>
   </div>
 </body>`;
 
@@ -83,13 +87,13 @@ describe('page guard', () => {
     expect(document.getElementById('vndb-screenshot-gallery')).not.toBeNull();
   });
 
-  test('gallery is inserted after #subject_detail', async () => {
+  test('gallery is inserted after #columnSubjectInHomeB', async () => {
     document.documentElement.innerHTML = DOM_WITH_VNDB;
     mockFetch([]);
     loadComponent();
-    const detail = document.getElementById('subject_detail');
+    const columnInHomeB = document.getElementById('columnSubjectInHomeB');
     const gallery = document.getElementById('vndb-screenshot-gallery');
-    expect(detail.nextSibling).toBe(gallery);
+    expect(columnInHomeB.nextSibling).toBe(gallery);
   });
 
   test('fetch is called with correct VNDB ID and fields', async () => {
