@@ -106,3 +106,29 @@ describe('page guard', () => {
     expect(body.fields).toContain('screenshots');
   });
 });
+
+describe('status states', () => {
+  test('shows loading placeholder immediately after insertion', () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetch([]);
+    loadComponent();
+    expect(document.querySelector('.vndb-status').textContent).toContain('正在加载');
+  });
+
+  test('shows empty message when API returns zero screenshots', async () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetch([]);
+    loadComponent();
+    await flushPromises();
+    expect(document.querySelector('.vndb-status').textContent).toContain('暂无截图');
+  });
+
+  test('shows error message when API returns non-ok status', async () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetchError();
+    loadComponent();
+    await flushPromises();
+    expect(document.querySelector('.vndb-error')).not.toBeNull();
+    expect(document.querySelector('.vndb-error a').href).toContain('vndb.org/v26307');
+  });
+});
