@@ -179,3 +179,52 @@ describe('screenshot rendering', () => {
     expect(document.getElementById('vndb-styles')).not.toBeNull();
   });
 });
+
+describe('NSFW toggle', () => {
+  async function setupWithScreenshots() {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetch([SFW_SHOT, NSFW_SHOT]);
+    loadComponent();
+    await flushPromises();
+  }
+
+  test('button initially reads "显示 R18"', async () => {
+    await setupWithScreenshots();
+    expect(document.getElementById('vndb-nsfw-toggle').textContent).toBe('显示 R18');
+  });
+
+  test('grid does not have show-nsfw class by default', async () => {
+    await setupWithScreenshots();
+    expect(document.getElementById('vndb-grid').classList.contains('show-nsfw')).toBe(false);
+  });
+
+  test('clicking toggle adds show-nsfw to grid and changes button text', async () => {
+    await setupWithScreenshots();
+    document.getElementById('vndb-nsfw-toggle').click();
+    expect(document.getElementById('vndb-grid').classList.contains('show-nsfw')).toBe(true);
+    expect(document.getElementById('vndb-nsfw-toggle').textContent).toBe('隐藏 R18');
+  });
+
+  test('clicking toggle again removes show-nsfw', async () => {
+    await setupWithScreenshots();
+    const btn = document.getElementById('vndb-nsfw-toggle');
+    btn.click();
+    btn.click();
+    expect(document.getElementById('vndb-grid').classList.contains('show-nsfw')).toBe(false);
+  });
+
+  test('toggle state is persisted to localStorage', async () => {
+    await setupWithScreenshots();
+    document.getElementById('vndb-nsfw-toggle').click();
+    expect(localStorage.getItem('vndb_show_nsfw')).toBe('1');
+    document.getElementById('vndb-nsfw-toggle').click();
+    expect(localStorage.getItem('vndb_show_nsfw')).toBe('0');
+  });
+
+  test('component reads localStorage on load and applies saved state', async () => {
+    localStorage.setItem('vndb_show_nsfw', '1');
+    await setupWithScreenshots();
+    expect(document.getElementById('vndb-grid').classList.contains('show-nsfw')).toBe(true);
+    expect(document.getElementById('vndb-nsfw-toggle').textContent).toBe('隐藏 R18');
+  });
+});

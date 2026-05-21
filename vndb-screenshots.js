@@ -117,6 +117,29 @@
     });
   }
 
+  function initNsfwToggle() {
+    var grid = document.getElementById('vndb-grid');
+    var btn  = document.getElementById('vndb-nsfw-toggle');
+    var showNsfw = localStorage.getItem('vndb_show_nsfw') === '1';
+
+    function applyState() {
+      if (showNsfw) {
+        grid.classList.add('show-nsfw');
+        btn.textContent = '隐藏 R18';
+      } else {
+        grid.classList.remove('show-nsfw');
+        btn.textContent = '显示 R18';
+      }
+    }
+
+    applyState();
+    btn.addEventListener('click', function () {
+      showNsfw = !showNsfw;
+      localStorage.setItem('vndb_show_nsfw', showNsfw ? '1' : '0');
+      applyState();
+    });
+  }
+
   function init() {
     if (!/^\/subject\/\d+$/.test(location.pathname)) return;
 
@@ -143,6 +166,7 @@
         return;
       }
       renderScreenshots(screenshots);
+      initNsfwToggle();
     }).catch(function () {
       showError(grid, vndbAnchor.href);
     });
