@@ -14,6 +14,19 @@
     return m ? m[1] : null;
   }
 
+  function cloudGet(key) {
+    try { return chiiApp.cloud_settings.get(key); } catch(e) { return null; }
+  }
+
+  function cloudSet(key, value) {
+    try {
+      var obj = {};
+      obj[key] = value;
+      chiiApp.cloud_settings.update(obj);
+      chiiApp.cloud_settings.save();
+    } catch(e) {}
+  }
+
   function buildDlsiteImageUrl(id, suffix) {
     var prefix = id.slice(0, 2);
     var numId = parseInt(id.slice(2), 10);
@@ -215,7 +228,8 @@
   function initNsfwToggle() {
     var grid  = document.getElementById('vndb-grid');
     var input = document.getElementById('vndb-nsfw-toggle');
-    var showNsfw = localStorage.getItem('vndb_show_nsfw') === '1';
+    var cloudVal = cloudGet('showNsfw');
+    var showNsfw = cloudVal !== null ? cloudVal === '1' : localStorage.getItem('vndb_show_nsfw') === '1';
 
     function applyState() {
       input.checked = showNsfw;
@@ -226,13 +240,15 @@
     applyState();
     input.addEventListener('change', function () {
       showNsfw = input.checked;
+      cloudSet('showNsfw', showNsfw ? '1' : '0');
       localStorage.setItem('vndb_show_nsfw', showNsfw ? '1' : '0');
       applyState();
     });
   }
 
   function getVisibleScreenshots(screenshots) {
-    var showNsfw = localStorage.getItem('vndb_show_nsfw') === '1';
+    var cloudVal = cloudGet('showNsfw');
+    var showNsfw = cloudVal !== null ? cloudVal === '1' : localStorage.getItem('vndb_show_nsfw') === '1';
     if (showNsfw) return screenshots.slice();
     return screenshots.filter(function (s) { return !isNsfw(s); });
   }
@@ -403,6 +419,9 @@
       if (hasVndb && hasDlsite) {
         renderDlsiteGrid(dlsiteImages);
         initTabs();
+        if ((cloudGet('defaultSource') || 'vndb') === 'dlsite') {
+          document.getElementById('dlsite-source-tag').click();
+        }
         document.getElementById('dlsite-grid').addEventListener('click', function (e) {
           var thumb = e.target.closest('.vndb-thumb');
           if (!thumb) return;
@@ -451,5 +470,23 @@
     }
   }
 
+  function registerSettings() {
+    try {
+      chiiLib.ukagaka.addGeneralConfig({
+        title: '游戏画廊默认来源',
+        name: 'galleryDefaultSource',
+        type: 'radio',
+        defaultValue: 'vndb',
+        getCurrentValue: function() { return cloudGet('defaultSource') || 'vndb'; },
+        onChange: function(value) { cloudSet('defaultSource', value); },
+        options: [
+          { value: 'vndb', label: 'VNDB' },
+          { value: 'dlsite', label: 'DLsite' }
+        ]
+      });
+    } catch(e) {}
+  }
+
+  registerSettings();
   init();
 })();
