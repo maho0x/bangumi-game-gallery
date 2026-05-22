@@ -36,7 +36,7 @@
     return 'https://img.dlsite.jp/modpub/images2/work/' + category + '/' + folder + '/' + id + suffix;
   }
 
-  function probeDlsiteImages(id, onDone) {
+  function probeDlsiteImages(id, onImage, onDone) {
     var images = [];
 
     function makeImg(suffix, onSuccess, onFail) {
@@ -50,7 +50,10 @@
       if (n > 20) { onDone(images); return; }
       var suffix = '_img_smpa' + n + '.webp';
       makeImg(suffix, function () {
-        images.push({ url: buildDlsiteImageUrl(id, suffix) });
+        var image = { url: buildDlsiteImageUrl(id, suffix) };
+        var idx = images.length;
+        images.push(image);
+        onImage(image, idx);
         probeNext(n + 1);
       }, function () {
         onDone(images);
@@ -58,7 +61,9 @@
     }
 
     makeImg('_img_main.webp', function () {
-      images.push({ url: buildDlsiteImageUrl(id, '_img_main.webp') });
+      var image = { url: buildDlsiteImageUrl(id, '_img_main.webp') };
+      images.push(image);
+      onImage(image, 0);
       probeNext(1);
     }, function () {
       onDone([]);
@@ -209,29 +214,21 @@
     });
   }
 
-  function renderDlsiteGrid(images) {
-    var grid = document.getElementById('dlsite-grid');
-    var hasDlsiteR18 = cloudGet('dlsiteR18') === '1';
-    grid.innerHTML = '';
-    images.forEach(function (image, i) {
-      var thumb = document.createElement('div');
-      thumb.className = 'vndb-thumb';
-      thumb.dataset.idx = String(i);
-
-      var img = document.createElement('img');
-      img.src = image.url;
-      img.loading = 'lazy';
-      thumb.appendChild(img);
-
-      if (hasDlsiteR18) {
-        var mask = document.createElement('div');
-        mask.className = 'vndb-mask';
-        mask.textContent = 'R18';
-        thumb.appendChild(mask);
-      }
-
-      grid.appendChild(thumb);
-    });
+  function renderDlsiteThumb(image, idx, hasDlsiteR18) {
+    var thumb = document.createElement('div');
+    thumb.className = 'vndb-thumb';
+    thumb.dataset.idx = String(idx);
+    var img = document.createElement('img');
+    img.src = image.url;
+    img.loading = 'lazy';
+    thumb.appendChild(img);
+    if (hasDlsiteR18) {
+      var mask = document.createElement('div');
+      mask.className = 'vndb-mask';
+      mask.textContent = 'R18';
+      thumb.appendChild(mask);
+    }
+    return thumb;
   }
 
   function initNsfwToggle() {
@@ -459,7 +456,6 @@
       }
 
       if (hasVndb && hasDlsite) {
-        renderDlsiteGrid(dlsiteImages);
         initTabs(cloudGet('defaultSource') || 'dlsite');
         document.getElementById('dlsite-grid').addEventListener('click', function (e) {
           var thumb = e.target.closest('.vndb-thumb');
@@ -467,7 +463,6 @@
           lbInstance.openWith(dlsiteImages, parseInt(thumb.dataset.idx, 10));
         });
       } else if (hasDlsite) {
-        renderDlsiteGrid(dlsiteImages);
         configureSingleSource('dlsite');
         if (cloudGet('dlsiteR18') === '1') { initNsfwToggle(); }
         lbInstance = initLightbox([]);
@@ -507,7 +502,12 @@
 
     if (dlsiteId) {
       showLoading(document.getElementById('dlsite-grid'));
-      probeDlsiteImages(dlsiteId, function (images) {
+      var hasDlsiteR18 = cloudGet('dlsiteR18') === '1';
+      probeDlsiteImages(dlsiteId, function (image, idx) {
+        var dlsiteGrid = document.getElementById('dlsite-grid');
+        if (idx === 0) { dlsiteGrid.innerHTML = ''; }
+        dlsiteGrid.appendChild(renderDlsiteThumb(image, idx, hasDlsiteR18));
+      }, function (images) {
         dlsiteImages = images;
         onBothDone();
       });
