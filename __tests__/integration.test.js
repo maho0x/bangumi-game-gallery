@@ -439,7 +439,7 @@ describe('DLsite probing behaviour', () => {
     mockImageProbe(['load', 'error']);
     loadComponent();
     expect(mockImageProbe.urls[1]).toBe(
-      'https://img.dlsite.jp/modpub/images2/work/doujin/RJ306000/RJ305720_img_smp1.webp'
+      'https://img.dlsite.jp/modpub/images2/work/doujin/RJ306000/RJ305720_img_smpa1.webp'
     );
   });
 
@@ -627,7 +627,7 @@ describe('DLsite lightbox', () => {
     document.querySelector('#dlsite-grid .vndb-thumb').click();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     expect(document.getElementById('vndb-lb-img').src).toBe(
-      'https://img.dlsite.jp/modpub/images2/work/doujin/RJ306000/RJ305720_img_smp1.webp'
+      'https://img.dlsite.jp/modpub/images2/work/doujin/RJ306000/RJ305720_img_smpa1.webp'
     );
     expect(document.getElementById('vndb-lb-counter').textContent).toBe('2 / 2');
   });

@@ -35,7 +35,7 @@
 
     function probeNext(n) {
       if (n > 20) { onDone(images); return; }
-      var suffix = '_img_smp' + n + '.webp';
+      var suffix = '_img_smpa' + n + '.webp';
       makeImg(suffix, function () {
         images.push({ url: buildDlsiteImageUrl(id, suffix) });
         probeNext(n + 1);
