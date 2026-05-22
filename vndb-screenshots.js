@@ -144,8 +144,8 @@
       '.vndb-switch input:checked ~ .vndb-slider .vndb-cross { transform:scale(0); }',
       '.vndb-switch input:checked ~ .vndb-slider::before { left:calc(100% - var(--sw-ew) - var(--sw-ew) / 2 - var(--sw-off)); }',
       '.vndb-switch input:checked ~ .vndb-slider .vndb-circle { left:calc(100% - var(--sw-d) - var(--sw-off)); box-shadow:var(--sw-sh2); }',
-      '#vndb-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }',
-      '.vndb-thumb { position: relative; height: 120px; overflow: hidden; cursor: pointer; border-radius: 3px; background: #f0f0f0; }',
+      '#vndb-grid { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; }',
+      '.vndb-thumb { position: relative; flex-shrink: 0; width: 120px; height: 76px; overflow: hidden; cursor: pointer; border-radius: 3px; background: #f0f0f0; }',
       '.vndb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }',
       '.vndb-mask { position: absolute; inset: 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: bold; letter-spacing: 1px; }',
       '#vndb-grid.show-nsfw .vndb-mask { display: none; }',
@@ -161,12 +161,12 @@
       '#vndb-lb-prev { top: 50%; left: 16px; transform: translateY(-50%); }',
       '#vndb-lb-next { top: 50%; right: 16px; transform: translateY(-50%); }',
       '#vndb-lb-counter { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); color: #ccc; font-size: 13px; z-index: 2; white-space: nowrap; }',
-      '#dlsite-grid { display: none; grid-template-columns: repeat(4, 1fr); gap: 6px; }',
+      '#dlsite-grid { display: none; flex-wrap: nowrap; overflow-x: auto; gap: 6px; }',
       '.vndb-tab { cursor: pointer; border: 1px solid #eee; border-radius: 20px; padding: 2px 6px; }',
       '.vndb-tab:not(.vndb-tab-active):hover { text-decoration: none; color: #aaa; }',
       '#vndb-screenshot-gallery .vndb-tab-active { cursor: default; color: var(--primary-color); border-color: var(--primary-color); }',
       '#vndb-screenshot-gallery.dlsite-active #vndb-grid { display: none; }',
-      '#vndb-screenshot-gallery.dlsite-active #dlsite-grid { display: grid; }',
+      '#vndb-screenshot-gallery.dlsite-active #dlsite-grid { display: flex; }',
       '#vndb-screenshot-gallery.dlsite-active .vndb-switch { display: none; }'
     ].join('\n');
     document.head.appendChild(style);
