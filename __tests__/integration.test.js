@@ -249,9 +249,9 @@ describe('NSFW toggle', () => {
     await flushPromises();
   }
 
-  test('button initially reads "显示 R18"', async () => {
+  test('toggle is unchecked by default', async () => {
     await setupWithScreenshots();
-    expect(document.getElementById('vndb-nsfw-toggle').textContent).toBe('显示 R18');
+    expect(document.getElementById('vndb-nsfw-toggle').checked).toBe(false);
   });
 
   test('grid does not have show-nsfw class by default', async () => {
@@ -259,11 +259,11 @@ describe('NSFW toggle', () => {
     expect(document.getElementById('vndb-grid').classList.contains('show-nsfw')).toBe(false);
   });
 
-  test('clicking toggle adds show-nsfw to grid and changes button text', async () => {
+  test('clicking toggle adds show-nsfw to grid and checks the input', async () => {
     await setupWithScreenshots();
     document.getElementById('vndb-nsfw-toggle').click();
     expect(document.getElementById('vndb-grid').classList.contains('show-nsfw')).toBe(true);
-    expect(document.getElementById('vndb-nsfw-toggle').textContent).toBe('隐藏 R18');
+    expect(document.getElementById('vndb-nsfw-toggle').checked).toBe(true);
   });
 
   test('clicking toggle again removes show-nsfw', async () => {
@@ -286,7 +286,7 @@ describe('NSFW toggle', () => {
     localStorage.setItem('vndb_show_nsfw', '1');
     await setupWithScreenshots();
     expect(document.getElementById('vndb-grid').classList.contains('show-nsfw')).toBe(true);
-    expect(document.getElementById('vndb-nsfw-toggle').textContent).toBe('隐藏 R18');
+    expect(document.getElementById('vndb-nsfw-toggle').checked).toBe(true);
   });
 });
 

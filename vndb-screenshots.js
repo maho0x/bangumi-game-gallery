@@ -90,11 +90,17 @@
     dlsiteTag.textContent = 'DLsite';
     heading.appendChild(dlsiteTag);
 
-    var toggle = document.createElement('button');
-    toggle.id = 'vndb-nsfw-toggle';
-    toggle.className = 'btnGray';
-    toggle.textContent = '显示 R18';
-    heading.appendChild(toggle);
+    var switchEl = document.createElement('label');
+    switchEl.className = 'vndb-switch';
+    switchEl.innerHTML =
+      '<input type="checkbox" id="vndb-nsfw-toggle">' +
+      '<div class="vndb-slider">' +
+        '<div class="vndb-circle">' +
+          '<svg class="vndb-checkmark" viewBox="0 0 10 7" fill="none"><path d="M1 3.5L3.5 6L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '<svg class="vndb-cross" viewBox="0 0 6 6" fill="none"><path d="M1 1L5 5M5 1L1 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        '</div>' +
+      '</div>';
+    heading.appendChild(switchEl);
 
     var grid = document.createElement('div');
     grid.id = 'vndb-grid';
@@ -123,7 +129,19 @@
     style.textContent = [
       '#vndb-screenshot-gallery { margin-top: 16px; }',
       '#vndb-screenshot-gallery .subtitle { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }',
-      '#vndb-nsfw-toggle { margin-left: auto; font-size: 12px; padding: 2px 8px; cursor: pointer; border-radius: 3px; }',
+      '.vndb-switch { --sw-w:46px; --sw-h:24px; --sw-bg:rgb(131,131,131); --sw-on:var(--primary-color); --sw-d:18px; --sw-off:calc((var(--sw-h) - var(--sw-d)) / 2); --sw-t:all .2s cubic-bezier(0.27,.2,.25,1.51); --sw-sh:1px 1px 2px rgba(146,146,146,.45); --sw-sh2:-1px 1px 2px rgba(163,163,163,.45); --sw-ew:calc(var(--sw-d) / 2); --sw-eh:calc(var(--sw-ew) / 2 - 1px); display:inline-block; margin-left:auto; cursor:pointer; }',
+      '.vndb-switch input { display:none; }',
+      '.vndb-switch svg { transition:var(--sw-t); position:absolute; height:auto; }',
+      '.vndb-switch .vndb-checkmark { width:10px; color:var(--primary-color); transform:scale(0); }',
+      '.vndb-switch .vndb-cross { width:6px; color:var(--sw-bg); }',
+      '.vndb-switch .vndb-slider { box-sizing:border-box; width:var(--sw-w); height:var(--sw-h); background:var(--sw-bg); border-radius:999px; display:flex; align-items:center; position:relative; transition:var(--sw-t); cursor:pointer; }',
+      '.vndb-switch .vndb-circle { width:var(--sw-d); height:var(--sw-d); background:#fff; border-radius:inherit; box-shadow:var(--sw-sh); display:flex; align-items:center; justify-content:center; transition:var(--sw-t); z-index:1; position:absolute; left:var(--sw-off); }',
+      '.vndb-switch .vndb-slider::before { content:""; position:absolute; width:var(--sw-ew); height:var(--sw-eh); left:calc(var(--sw-off) + var(--sw-ew) / 2); background:#fff; border-radius:1px; transition:all .2s ease-in-out; }',
+      '.vndb-switch input:checked + .vndb-slider { background:var(--sw-on); }',
+      '.vndb-switch input:checked + .vndb-slider .vndb-checkmark { transform:scale(1); }',
+      '.vndb-switch input:checked + .vndb-slider .vndb-cross { transform:scale(0); }',
+      '.vndb-switch input:checked + .vndb-slider::before { left:calc(100% - var(--sw-ew) - var(--sw-ew) / 2 - var(--sw-off)); }',
+      '.vndb-switch input:checked + .vndb-slider .vndb-circle { left:calc(100% - var(--sw-d) - var(--sw-off)); box-shadow:var(--sw-sh2); }',
       '#vndb-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }',
       '.vndb-thumb { position: relative; height: 120px; overflow: hidden; cursor: pointer; border-radius: 3px; background: #f0f0f0; }',
       '.vndb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }',
@@ -147,7 +165,7 @@
       '.vndb-tab-active { cursor: default; color: var(--primary-color); border-color: var(--primary-color); }',
       '#vndb-screenshot-gallery.dlsite-active #vndb-grid { display: none; }',
       '#vndb-screenshot-gallery.dlsite-active #dlsite-grid { display: grid; }',
-      '#vndb-screenshot-gallery.dlsite-active #vndb-nsfw-toggle { display: none; }'
+      '#vndb-screenshot-gallery.dlsite-active .vndb-switch { display: none; }'
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -193,23 +211,19 @@
   }
 
   function initNsfwToggle() {
-    var grid = document.getElementById('vndb-grid');
-    var btn  = document.getElementById('vndb-nsfw-toggle');
+    var grid  = document.getElementById('vndb-grid');
+    var input = document.getElementById('vndb-nsfw-toggle');
     var showNsfw = localStorage.getItem('vndb_show_nsfw') === '1';
 
     function applyState() {
-      if (showNsfw) {
-        grid.classList.add('show-nsfw');
-        btn.textContent = '隐藏 R18';
-      } else {
-        grid.classList.remove('show-nsfw');
-        btn.textContent = '显示 R18';
-      }
+      input.checked = showNsfw;
+      if (showNsfw) { grid.classList.add('show-nsfw'); }
+      else          { grid.classList.remove('show-nsfw'); }
     }
 
     applyState();
-    btn.addEventListener('click', function () {
-      showNsfw = !showNsfw;
+    input.addEventListener('change', function () {
+      showNsfw = input.checked;
       localStorage.setItem('vndb_show_nsfw', showNsfw ? '1' : '0');
       applyState();
     });
