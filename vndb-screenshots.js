@@ -80,14 +80,14 @@
     var vndbTag = document.createElement('small');
     vndbTag.id = 'vndb-source-tag';
     vndbTag.className = 'grey';
-    vndbTag.textContent = 'via VNDB';
+    vndbTag.textContent = 'VNDB';
     heading.appendChild(vndbTag);
 
     var dlsiteTag = document.createElement('small');
     dlsiteTag.id = 'dlsite-source-tag';
     dlsiteTag.className = 'grey';
     dlsiteTag.style.display = 'none';
-    dlsiteTag.textContent = 'via DLsite';
+    dlsiteTag.textContent = 'DLsite';
     heading.appendChild(dlsiteTag);
 
     var toggle = document.createElement('button');
@@ -144,7 +144,7 @@
       '#dlsite-grid { display: none; grid-template-columns: repeat(4, 1fr); gap: 6px; }',
       '.vndb-tab { cursor: pointer; border: 1px solid #eee; border-radius: 20px; padding: 2px 6px; }',
       '.vndb-tab:not(.vndb-tab-active):hover { text-decoration: none; color: #aaa; }',
-      '.vndb-tab-active { cursor: default; color: #666; }',
+      '.vndb-tab-active { cursor: default; color: var(--primary-color); border-color: var(--primary-color); }',
       '#vndb-screenshot-gallery.dlsite-active #vndb-grid { display: none; }',
       '#vndb-screenshot-gallery.dlsite-active #dlsite-grid { display: grid; }',
       '#vndb-screenshot-gallery.dlsite-active #vndb-nsfw-toggle { display: none; }'
