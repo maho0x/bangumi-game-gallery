@@ -142,8 +142,9 @@
       '#vndb-lb-next { top: 50%; right: 16px; transform: translateY(-50%); }',
       '#vndb-lb-counter { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); color: #ccc; font-size: 13px; z-index: 2; white-space: nowrap; }',
       '#dlsite-grid { display: none; grid-template-columns: repeat(4, 1fr); gap: 6px; }',
-      '.vndb-tab { cursor: pointer; text-decoration: underline; }',
-      '.vndb-tab-active { font-weight: bold; text-decoration: none; cursor: default; }',
+      '.vndb-tab { cursor: pointer; }',
+      '.vndb-tab:not(.vndb-tab-active):hover { text-decoration: underline; }',
+      '.vndb-tab-active { cursor: default; color: #555; }',
       '#vndb-screenshot-gallery.dlsite-active #vndb-grid { display: none; }',
       '#vndb-screenshot-gallery.dlsite-active #dlsite-grid { display: grid; }',
       '#vndb-screenshot-gallery.dlsite-active #vndb-nsfw-toggle { display: none; }'
