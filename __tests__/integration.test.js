@@ -414,6 +414,17 @@ describe('DLsite URL construction', () => {
     );
   });
 
+  test('probes correct main URL for 8-digit RJ id', () => {
+    const rj8Url = 'https://www.dlsite.com/maniax/work/=/product_id/RJ01027690.html';
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY.replace(DLSITE_RJ_URL, rj8Url);
+    mockFetch([]);
+    mockImageProbe(['error']);
+    loadComponent();
+    expect(mockImageProbe.urls[0]).toBe(
+      'https://img.dlsite.jp/modpub/images2/work/doujin/RJ01028000/RJ01027690_img_main.webp'
+    );
+  });
+
   test('does not probe when DLsite prefix is unsupported', () => {
     const bjUrl = 'https://www.dlsite.com/books/work/=/product_id/BJ123456.html';
     document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY.replace(DLSITE_RJ_URL, bjUrl);
@@ -446,9 +457,9 @@ describe('DLsite probing behaviour', () => {
   test('stops after first failed smp', () => {
     document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
     mockFetch([]);
-    mockImageProbe(['load', 'load', 'error']);
+    mockImageProbe(['load', 'load', 'error', 'error']);
     loadComponent();
-    expect(mockImageProbe.urls.length).toBe(3);
+    expect(mockImageProbe.urls.length).toBe(4);
   });
 
   test('stops at smp20 even if all succeed', () => {

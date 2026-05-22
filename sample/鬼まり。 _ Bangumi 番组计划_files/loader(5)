@@ -1,0 +1,35 @@
+.tag_d{
+padding: 4px 0;
+font-size: 10px;
+width: 5px;
+float: right;
+}
+.horizontalChart{
+height: 20em;
+}
+.horizontalChart li{
+height: 18em;
+}
+.horizontalChart li a .count{
+background: #2D7BB2;
+}
+.horizontalChart li a:hover .count{
+background: #f4ac09;
+}
+input.searchTagInputL {
+border: 2px solid #CCC;
+font-size: 14px;
+padding: 2px 5px;
+width: 180px;
+-moz-border-radius: 5px;
+-webkit-border-radius: 5px;
+}
+input.searchTagBtnL {
+font-size: 13px;
+border: none;
+background: #4EB1D4;
+color: #FFF;
+padding: 3px 10px;
+-moz-border-radius: 5px;
+-webkit-border-radius: 5px;
+}

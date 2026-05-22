@@ -4,6 +4,8 @@
 
 (function () {
 
+  var $ = function (id) { return document.getElementById(id); };
+
   function extractVndbId(href) {
     var m = (href || '').match(/vndb\.org\/(v\d+)/);
     return m ? m[1] : null;
@@ -27,47 +29,51 @@
     } catch(e) {}
   }
 
+  function getShowNsfw() {
+    var v = cloudGet('showNsfw');
+    return v !== null ? v === '1' : localStorage.getItem('vndb_show_nsfw') === '1';
+  }
+
+  function isNsfw(s) { return s.sexual >= 2 || s.violence >= 2; }
+
   function buildDlsiteImageUrl(id, suffix) {
     var prefix = id.slice(0, 2);
-    var numId = parseInt(id.slice(2), 10);
-    var folderNum = Math.ceil(numId / 1000) * 1000;
-    var folder = prefix + ('000000' + folderNum).slice(-6);
-    var category = prefix === 'RJ' ? 'doujin' : 'professional';
-    return 'https://img.dlsite.jp/modpub/images2/work/' + category + '/' + folder + '/' + id + suffix;
+    var digits = id.slice(2);
+    var folderNum = Math.ceil(parseInt(digits, 10) / 1000) * 1000;
+    var padded = String(folderNum);
+    while (padded.length < digits.length) padded = '0' + padded;
+    return 'https://img.dlsite.jp/modpub/images2/work/' +
+      (prefix === 'RJ' ? 'doujin' : 'professional') + '/' +
+      prefix + padded + '/' + id + suffix;
   }
 
   function probeDlsiteImages(id, onImage, onDone) {
     var images = [];
-
-    function makeImg(suffix, onSuccess, onFail) {
+    function tryLoad(url, onSuccess, onFail) {
       var img = new Image();
-      img.onload = onSuccess;
+      img.onload = function () { onSuccess(url); };
       img.onerror = onFail;
-      img.src = buildDlsiteImageUrl(id, suffix);
+      img.src = url;
     }
-
-    function probeNext(n) {
-      if (n > 20) { onDone(images); return; }
-      var suffix = '_img_smpa' + n + '.webp';
-      makeImg(suffix, function () {
-        var image = { url: buildDlsiteImageUrl(id, suffix) };
-        var idx = images.length;
-        images.push(image);
-        onImage(image, idx);
-        probeNext(n + 1);
-      }, function () {
-        onDone(images);
+    function found(url, n) {
+      images.push({ url: url });
+      onImage({ url: url }, images.length - 1);
+      if (n >= 20) { onDone(images); return; }
+      probe(n + 1);
+    }
+    function probe(n) {
+      if (n === 0) {
+        var mainUrl = buildDlsiteImageUrl(id, '_img_main.webp');
+        tryLoad(mainUrl, function (url) { found(url, 0); }, function () { onDone(images); });
+        return;
+      }
+      var smpaUrl = buildDlsiteImageUrl(id, '_img_smpa' + n + '.webp');
+      tryLoad(smpaUrl, function (url) { found(url, n); }, function () {
+        var smpUrl = buildDlsiteImageUrl(id, '_img_smp' + n + '.webp');
+        tryLoad(smpUrl, function (url) { found(url, n); }, function () { onDone(images); });
       });
     }
-
-    makeImg('_img_main.webp', function () {
-      var image = { url: buildDlsiteImageUrl(id, '_img_main.webp') };
-      images.push(image);
-      onImage(image, 0);
-      probeNext(1);
-    }, function () {
-      onDone([]);
-    });
+    probe(0);
   }
 
   function fetchScreenshots(vndbId) {
@@ -87,62 +93,25 @@
     });
   }
 
-  function createGalleryShell() {
-    var gallery = document.createElement('div');
-    gallery.id = 'vndb-screenshot-gallery';
-
-    var heading = document.createElement('h2');
-    heading.className = 'subtitle';
-    heading.appendChild(document.createTextNode('游戏画廊 '));
-
-    var dlsiteTag = document.createElement('small');
-    dlsiteTag.id = 'dlsite-source-tag';
-    dlsiteTag.className = 'grey';
-    dlsiteTag.style.display = 'none';
-    dlsiteTag.textContent = 'DLsite';
-    heading.appendChild(dlsiteTag);
-
-    var vndbTag = document.createElement('small');
-    vndbTag.id = 'vndb-source-tag';
-    vndbTag.className = 'grey';
-    vndbTag.textContent = 'VNDB';
-    heading.appendChild(vndbTag);
-
-    var switchEl = document.createElement('label');
-    switchEl.className = 'vndb-switch';
-    switchEl.innerHTML =
-      '<input type="checkbox" id="vndb-nsfw-toggle">' +
-      '<span class="vndb-switch-label">R18</span>' +
-      '<div class="vndb-slider">' +
-        '<div class="vndb-circle">' +
-          '<svg class="vndb-checkmark" viewBox="0 0 10 7" fill="none"><path d="M1 3.5L3.5 6L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-          '<svg class="vndb-cross" viewBox="0 0 6 6" fill="none"><path d="M1 1L5 5M5 1L1 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-        '</div>' +
-      '</div>';
-    heading.appendChild(switchEl);
-
-    var grid = document.createElement('div');
-    grid.id = 'vndb-grid';
-
-    var dlsiteGrid = document.createElement('div');
-    dlsiteGrid.id = 'dlsite-grid';
-
-    gallery.appendChild(heading);
-    gallery.appendChild(grid);
-    gallery.appendChild(dlsiteGrid);
-    return gallery;
-  }
-
-  function showLoading(grid) {
-    grid.innerHTML = '<p class="vndb-status">正在加载截图…</p>';
-  }
-
-  function isNsfw(screenshot) {
-    return screenshot.sexual >= 2 || screenshot.violence >= 2;
+  function createThumb(src, idx, addNsfwClass, addMask) {
+    var thumb = document.createElement('div');
+    thumb.className = 'vndb-thumb' + (addNsfwClass ? ' vndb-nsfw' : '');
+    thumb.dataset.idx = String(idx);
+    var img = document.createElement('img');
+    img.src = src;
+    img.loading = 'lazy';
+    thumb.appendChild(img);
+    if (addMask) {
+      var mask = document.createElement('div');
+      mask.className = 'vndb-mask';
+      mask.textContent = 'R18';
+      thumb.appendChild(mask);
+    }
+    return thumb;
   }
 
   function injectStyles() {
-    if (document.getElementById('vndb-styles')) return;
+    if ($('vndb-styles')) return;
     var style = document.createElement('style');
     style.id = 'vndb-styles';
     style.textContent = [
@@ -166,8 +135,7 @@
       '.vndb-thumb { position: relative; flex-shrink: 0; width: 150px; height: 95px; overflow: hidden; cursor: pointer; border-radius: 3px; background: #f0f0f0; }',
       '.vndb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }',
       '.vndb-mask { position: absolute; inset: 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: bold; letter-spacing: 1px; }',
-      '#vndb-grid.show-nsfw .vndb-mask { display: none; }',
-      '#dlsite-grid.show-nsfw .vndb-mask { display: none; }',
+      '#vndb-grid.show-nsfw .vndb-mask, #dlsite-grid.show-nsfw .vndb-mask { display: none; }',
       '.vndb-status { color: #999; font-size: 13px; padding: 8px 0; }',
       '#vndb-lightbox { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; }',
       '#vndb-lb-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.88); }',
@@ -193,63 +161,42 @@
     document.head.appendChild(style);
   }
 
-  function renderScreenshots(screenshots) {
-    var grid = document.getElementById('vndb-grid');
-    grid.innerHTML = '';
-    screenshots.forEach(function (s, i) {
-      var thumb = document.createElement('div');
-      thumb.className = 'vndb-thumb' + (isNsfw(s) ? ' vndb-nsfw' : '');
-      thumb.dataset.idx = String(i);
-
-      var img = document.createElement('img');
-      img.src = s.thumbnail;
-      img.loading = 'lazy';
-      thumb.appendChild(img);
-
-      if (isNsfw(s)) {
-        var mask = document.createElement('div');
-        mask.className = 'vndb-mask';
-        mask.textContent = 'R18';
-        thumb.appendChild(mask);
-      }
-      grid.appendChild(thumb);
-    });
-  }
-
-  function renderDlsiteThumb(image, idx, hasDlsiteR18) {
-    var thumb = document.createElement('div');
-    thumb.className = 'vndb-thumb';
-    thumb.dataset.idx = String(idx);
-    var img = document.createElement('img');
-    img.src = image.url;
-    img.loading = 'lazy';
-    thumb.appendChild(img);
-    if (hasDlsiteR18) {
-      var mask = document.createElement('div');
-      mask.className = 'vndb-mask';
-      mask.textContent = 'R18';
-      thumb.appendChild(mask);
-    }
-    return thumb;
+  function createGalleryShell(vndbId, dlsiteId) {
+    var gallery = document.createElement('div');
+    gallery.id = 'vndb-screenshot-gallery';
+    var dlsiteStyle = (!vndbId && dlsiteId) ? '' : ' style="display:none"';
+    var vndbStyle   = (!vndbId && dlsiteId) ? ' style="display:none"' : '';
+    gallery.innerHTML =
+      '<h2 class="subtitle">游戏画廊 ' +
+        '<small id="dlsite-source-tag" class="grey"' + dlsiteStyle + '>DLsite</small>' +
+        '<small id="vndb-source-tag" class="grey"' + vndbStyle + '>VNDB</small>' +
+        '<label class="vndb-switch">' +
+          '<input type="checkbox" id="vndb-nsfw-toggle">' +
+          '<span class="vndb-switch-label">R18</span>' +
+          '<div class="vndb-slider">' +
+            '<div class="vndb-circle">' +
+              '<svg class="vndb-checkmark" viewBox="0 0 10 7" fill="none"><path d="M1 3.5L3.5 6L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+              '<svg class="vndb-cross" viewBox="0 0 6 6" fill="none"><path d="M1 1L5 5M5 1L1 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+            '</div>' +
+          '</div>' +
+        '</label>' +
+      '</h2>' +
+      '<div id="vndb-grid"></div>' +
+      '<div id="dlsite-grid"></div>';
+    return gallery;
   }
 
   function initNsfwToggle() {
-    var grid       = document.getElementById('vndb-grid');
-    var dlsiteGrid = document.getElementById('dlsite-grid');
-    var input      = document.getElementById('vndb-nsfw-toggle');
+    var grid       = $('vndb-grid');
+    var dlsiteGrid = $('dlsite-grid');
+    var input      = $('vndb-nsfw-toggle');
     var hasDlsiteR18 = cloudGet('dlsiteR18') === '1';
-    var cloudVal = cloudGet('showNsfw');
-    var showNsfw = cloudVal !== null ? cloudVal === '1' : localStorage.getItem('vndb_show_nsfw') === '1';
+    var showNsfw = getShowNsfw();
 
     function applyState() {
       input.checked = showNsfw;
-      if (showNsfw) {
-        grid.classList.add('show-nsfw');
-        if (hasDlsiteR18) { dlsiteGrid.classList.add('show-nsfw'); }
-      } else {
-        grid.classList.remove('show-nsfw');
-        if (hasDlsiteR18) { dlsiteGrid.classList.remove('show-nsfw'); }
-      }
+      grid.classList.toggle('show-nsfw', showNsfw);
+      if (hasDlsiteR18) dlsiteGrid.classList.toggle('show-nsfw', showNsfw);
     }
 
     applyState();
@@ -261,41 +208,32 @@
     });
   }
 
-  function getVisibleScreenshots(screenshots) {
-    var cloudVal = cloudGet('showNsfw');
-    var showNsfw = cloudVal !== null ? cloudVal === '1' : localStorage.getItem('vndb_show_nsfw') === '1';
-    if (showNsfw) return screenshots.slice();
-    return screenshots.filter(function (s) { return !isNsfw(s); });
-  }
-
-  function initLightbox(screenshots) {
+  function initLightbox() {
     var lb = document.createElement('div');
     lb.id = 'vndb-lightbox';
     lb.style.display = 'none';
-    lb.innerHTML = [
-      '<div id="vndb-lb-backdrop"></div>',
-      '<button id="vndb-lb-close">✕</button>',
-      '<button id="vndb-lb-prev">❮</button>',
-      '<button id="vndb-lb-next">❯</button>',
-      '<div id="vndb-lb-content">',
-        '<div id="vndb-lb-loading">加载中…</div>',
-        '<img id="vndb-lb-img" src="" alt="">',
-      '</div>',
-      '<div id="vndb-lb-counter"></div>'
-    ].join('');
+    lb.innerHTML =
+      '<div id="vndb-lb-backdrop"></div>' +
+      '<button id="vndb-lb-close">✕</button>' +
+      '<button id="vndb-lb-prev">❮</button>' +
+      '<button id="vndb-lb-next">❯</button>' +
+      '<div id="vndb-lb-content">' +
+        '<div id="vndb-lb-loading">加载中…</div>' +
+        '<img id="vndb-lb-img" src="" alt="">' +
+      '</div>' +
+      '<div id="vndb-lb-counter"></div>';
     document.body.appendChild(lb);
 
     var currentIdx = 0;
     var lbOpen = false;
-    var getImages = function () { return getVisibleScreenshots(screenshots); };
+    var getImages = function () { return []; };
 
     function showImage(image) {
-      var img     = document.getElementById('vndb-lb-img');
-      var loading = document.getElementById('vndb-lb-loading');
-      var counter = document.getElementById('vndb-lb-counter');
+      var img     = $('vndb-lb-img');
+      var loading = $('vndb-lb-loading');
       img.style.display = 'none';
       loading.style.display = 'block';
-      counter.textContent = (currentIdx + 1) + ' / ' + getImages().length;
+      $('vndb-lb-counter').textContent = (currentIdx + 1) + ' / ' + getImages().length;
       img.onload = function () {
         loading.style.display = 'none';
         img.style.display = 'block';
@@ -303,26 +241,15 @@
       img.src = image.url;
     }
 
-    function openWith(images, idx) {
-      getImages = function () { return images; };
+    function show(imagesFn, idx) {
+      getImages = imagesFn;
       currentIdx = idx;
       lbOpen = true;
       lb.style.display = 'flex';
-      showImage(images[idx]);
+      showImage(imagesFn()[idx]);
     }
 
-    function open(visibleIdx) {
-      getImages = function () { return getVisibleScreenshots(screenshots); };
-      currentIdx = visibleIdx;
-      lbOpen = true;
-      lb.style.display = 'flex';
-      showImage(getImages()[currentIdx]);
-    }
-
-    function close() {
-      lbOpen = false;
-      lb.style.display = 'none';
-    }
+    function close() { lbOpen = false; lb.style.display = 'none'; }
 
     function navigate(delta) {
       var imgs = getImages();
@@ -331,10 +258,10 @@
       showImage(imgs[currentIdx]);
     }
 
-    document.getElementById('vndb-lb-backdrop').addEventListener('click', close);
-    document.getElementById('vndb-lb-close').addEventListener('click', close);
-    document.getElementById('vndb-lb-prev').addEventListener('click', function () { navigate(-1); });
-    document.getElementById('vndb-lb-next').addEventListener('click', function () { navigate(1); });
+    $('vndb-lb-backdrop').addEventListener('click', close);
+    $('vndb-lb-close').addEventListener('click', close);
+    $('vndb-lb-prev').addEventListener('click', function () { navigate(-1); });
+    $('vndb-lb-next').addEventListener('click', function () { navigate(1); });
 
     document.addEventListener('keydown', function (e) {
       if (!lbOpen) return;
@@ -343,49 +270,21 @@
       if (e.key === 'ArrowRight') navigate(1);
     });
 
-    document.getElementById('vndb-grid').addEventListener('click', function (e) {
-      var thumb = e.target.closest('.vndb-thumb');
-      if (!thumb) return;
-      var isNsfwThumb = thumb.classList.contains('vndb-nsfw');
-      var showNsfw    = localStorage.getItem('vndb_show_nsfw') === '1';
-      if (isNsfwThumb && !showNsfw) return;
-      var rawIdx = parseInt(thumb.dataset.idx, 10);
-      var visibleIdx = 0;
-      var count = 0;
-      for (var i = 0; i < screenshots.length; i++) {
-        if (isNsfw(screenshots[i]) && !showNsfw) continue;
-        if (i === rawIdx) { visibleIdx = count; break; }
-        count++;
-      }
-      open(visibleIdx);
-    });
-
-    return { openWith: openWith };
-  }
-
-  function configureSingleSource(source) {
-    var gallery = document.getElementById('vndb-screenshot-gallery');
-    var vndbTag = document.getElementById('vndb-source-tag');
-    var dlsiteTag = document.getElementById('dlsite-source-tag');
-    if (source === 'dlsite') {
-      gallery.classList.add('dlsite-active');
-      vndbTag.style.display = 'none';
-      dlsiteTag.style.display = '';
-    }
+    return { show: show };
   }
 
   function initTabs(initialSource) {
-    var gallery = document.getElementById('vndb-screenshot-gallery');
-    var vndbTag = document.getElementById('vndb-source-tag');
-    var dlsiteTag = document.getElementById('dlsite-source-tag');
+    var gallery   = $('vndb-screenshot-gallery');
+    var vndbTag   = $('vndb-source-tag');
+    var dlsiteTag = $('dlsite-source-tag');
 
     dlsiteTag.style.display = '';
     if (initialSource === 'dlsite') {
       gallery.classList.add('dlsite-active');
-      vndbTag.className = 'grey vndb-tab';
+      vndbTag.className   = 'grey vndb-tab';
       dlsiteTag.className = 'grey vndb-tab vndb-tab-active';
     } else {
-      vndbTag.className = 'grey vndb-tab vndb-tab-active';
+      vndbTag.className   = 'grey vndb-tab vndb-tab-active';
       dlsiteTag.className = 'grey vndb-tab';
     }
 
@@ -405,7 +304,7 @@
   function init() {
     if (!/^\/subject\/\d+$/.test(location.pathname)) return;
 
-    var subjectDetail = document.getElementById('subject_detail');
+    var subjectDetail = $('subject_detail');
     if (!subjectDetail) return;
 
     var vndbAnchor   = document.querySelector('#infobox a[href*="vndb.org/v"]');
@@ -416,24 +315,22 @@
 
     if (!vndbId && !dlsiteId) return;
 
-    var columnInHomeB = document.getElementById('columnSubjectInHomeB') || subjectDetail.parentNode;
+    var columnInHomeB = $('columnSubjectInHomeB') || subjectDetail.parentNode;
+    var defaultSource = cloudGet('defaultSource') || 'dlsite';
+    var hasDlsiteR18  = cloudGet('dlsiteR18') === '1';
 
     injectStyles();
-    var gallery = createGalleryShell();
+    var gallery = createGalleryShell(vndbId, dlsiteId);
     columnInHomeB.parentNode.insertBefore(gallery, columnInHomeB.nextSibling);
-    if ((cloudGet('defaultSource') || 'dlsite') === 'dlsite') {
-      gallery.classList.add('dlsite-active');
-    }
-    if (cloudGet('dlsiteR18') === '1') {
-      gallery.classList.add('dlsite-r18');
-    }
+
+    if (defaultSource === 'dlsite') gallery.classList.add('dlsite-active');
+    if (hasDlsiteR18) gallery.classList.add('dlsite-r18');
 
     if (vndbId && dlsiteId) {
-      var dlsiteTagEl = document.getElementById('dlsite-source-tag');
-      var vndbTagEl   = document.getElementById('vndb-source-tag');
+      var dlsiteTagEl = $('dlsite-source-tag');
+      var vndbTagEl   = $('vndb-source-tag');
       dlsiteTagEl.style.display = '';
-      var earlyDefault = cloudGet('defaultSource') || 'dlsite';
-      if (earlyDefault === 'dlsite') {
+      if (defaultSource === 'dlsite') {
         dlsiteTagEl.className = 'grey vndb-tab vndb-tab-active';
         vndbTagEl.className   = 'grey vndb-tab';
       } else {
@@ -442,9 +339,15 @@
       }
     }
 
+    var screenshots  = [];
     var vndbResult   = null;
     var dlsiteImages = null;
     var lbInstance   = null;
+
+    function visibleScreenshots() {
+      var show = getShowNsfw();
+      return show ? screenshots.slice() : screenshots.filter(function (s) { return !isNsfw(s); });
+    }
 
     function onBothDone() {
       if (vndbResult === null || dlsiteImages === null) return;
@@ -458,40 +361,57 @@
       }
 
       if (hasVndb && hasDlsite) {
-        initTabs(cloudGet('defaultSource') || 'dlsite');
-        document.getElementById('dlsite-grid').addEventListener('click', function (e) {
-          var thumb = e.target.closest('.vndb-thumb');
-          if (!thumb) return;
-          lbInstance.openWith(dlsiteImages, parseInt(thumb.dataset.idx, 10));
-        });
+        initTabs(defaultSource);
       } else if (hasDlsite) {
-        configureSingleSource('dlsite');
-        if (cloudGet('dlsiteR18') === '1') { initNsfwToggle(); }
-        lbInstance = initLightbox([]);
-        document.getElementById('dlsite-grid').addEventListener('click', function (e) {
-          var thumb = e.target.closest('.vndb-thumb');
-          if (!thumb) return;
-          lbInstance.openWith(dlsiteImages, parseInt(thumb.dataset.idx, 10));
-        });
+        gallery.classList.add('dlsite-active');
+        $('vndb-source-tag').style.display = 'none';
+        $('dlsite-source-tag').style.display = '';
+        if (hasDlsiteR18) initNsfwToggle();
+        if (!lbInstance) lbInstance = initLightbox();
       } else {
-        /* hasVndb && !hasDlsite */
         gallery.classList.remove('dlsite-active');
         if (dlsiteId) {
-          document.getElementById('dlsite-source-tag').style.display = 'none';
-          document.getElementById('dlsite-grid').innerHTML = '';
+          $('dlsite-source-tag').style.display = 'none';
+          $('dlsite-grid').innerHTML = '';
         }
+      }
+
+      if (hasDlsite) {
+        if (!lbInstance) lbInstance = initLightbox();
+        $('dlsite-grid').addEventListener('click', function (e) {
+          var thumb = e.target.closest('.vndb-thumb');
+          if (!thumb) return;
+          lbInstance.show(function () { return dlsiteImages; }, parseInt(thumb.dataset.idx, 10));
+        });
       }
     }
 
     if (vndbId) {
-      var grid = document.getElementById('vndb-grid');
-      showLoading(grid);
-      fetchScreenshots(vndbId).then(function (screenshots) {
-        vndbResult = screenshots;
-        if (screenshots.length) {
-          renderScreenshots(screenshots);
+      $('vndb-grid').innerHTML = '<p class="vndb-status">正在加载截图…</p>';
+      fetchScreenshots(vndbId).then(function (ss) {
+        vndbResult = ss;
+        screenshots = ss;
+        if (ss.length) {
+          var grid = $('vndb-grid');
+          grid.innerHTML = '';
+          ss.forEach(function (s, i) {
+            var n = isNsfw(s);
+            grid.appendChild(createThumb(s.thumbnail, i, n, n));
+          });
           initNsfwToggle();
-          lbInstance = initLightbox(screenshots);
+          lbInstance = initLightbox();
+          $('vndb-grid').addEventListener('click', function (e) {
+            var thumb = e.target.closest('.vndb-thumb');
+            if (!thumb) return;
+            var show = getShowNsfw();
+            if (thumb.classList.contains('vndb-nsfw') && !show) return;
+            var rawIdx = parseInt(thumb.dataset.idx, 10);
+            var visibleIdx = 0;
+            for (var i = 0; i < rawIdx; i++) {
+              if (!isNsfw(ss[i]) || show) visibleIdx++;
+            }
+            lbInstance.show(visibleScreenshots, visibleIdx);
+          });
         }
       }).catch(function () {
         vndbResult = [];
@@ -503,12 +423,11 @@
     }
 
     if (dlsiteId) {
-      showLoading(document.getElementById('dlsite-grid'));
-      var hasDlsiteR18 = cloudGet('dlsiteR18') === '1';
+      $('dlsite-grid').innerHTML = '<p class="vndb-status">正在加载截图…</p>';
       probeDlsiteImages(dlsiteId, function (image, idx) {
-        var dlsiteGrid = document.getElementById('dlsite-grid');
-        if (idx === 0) { dlsiteGrid.innerHTML = ''; }
-        dlsiteGrid.appendChild(renderDlsiteThumb(image, idx, hasDlsiteR18));
+        var dlsiteGrid = $('dlsite-grid');
+        if (idx === 0) dlsiteGrid.innerHTML = '';
+        dlsiteGrid.appendChild(createThumb(image.url, idx, false, hasDlsiteR18));
       }, function (images) {
         dlsiteImages = images;
         onBothDone();
@@ -521,28 +440,35 @@
 
   function registerSettings() {
     try {
-      chiiLib.ukagaka.addGeneralConfig({
-        title: '游戏画廊默认来源',
-        name: 'galleryDefaultSource',
-        type: 'radio',
-        defaultValue: 'dlsite',
-        getCurrentValue: function() { return cloudGet('defaultSource') || 'dlsite'; },
-        onChange: function(value) { cloudSet('defaultSource', value); },
-        options: [
-          { value: 'vndb', label: 'VNDB' },
-          { value: 'dlsite', label: 'DLsite' }
-        ]
-      });
-      chiiLib.ukagaka.addGeneralConfig({
-        title: 'DLsite默认R18',
-        name: 'dlsiteR18',
-        type: 'radio',
-        defaultValue: '0',
-        getCurrentValue: function() { return cloudGet('dlsiteR18') || '0'; },
-        onChange: function(value) { cloudSet('dlsiteR18', value); },
-        options: [
-          { value: '0', label: '关闭' },
-          { value: '1', label: '开启' }
+      chiiLib.ukagaka.addPanelTab({
+        tab: 'game_gallery',
+        label: '游戏画廊',
+        type: 'options',
+        config: [
+          {
+            title: '优先显示',
+            name: 'galleryDefaultSource',
+            type: 'radio',
+            defaultValue: 'dlsite',
+            getCurrentValue: function() { return cloudGet('defaultSource') || 'dlsite'; },
+            onChange: function(value) { cloudSet('defaultSource', value); },
+            options: [
+              { value: 'vndb', label: 'VNDB' },
+              { value: 'dlsite', label: 'DLsite' }
+            ]
+          },
+          {
+            title: 'DLsite默认显示R18',
+            name: 'dlsiteR18',
+            type: 'radio',
+            defaultValue: '0',
+            getCurrentValue: function() { return cloudGet('dlsiteR18') || '0'; },
+            onChange: function(value) { cloudSet('dlsiteR18', value); },
+            options: [
+              { value: '0', label: '关闭' },
+              { value: '1', label: '开启' }
+            ]
+          }
         ]
       });
     } catch(e) {}

@@ -1,0 +1,293 @@
+Title: [Guide] 组件设置云端存储
+
+URL Source: https://bgm.tv/group/topic/435662
+
+Markdown Content:
+# [Guide] 组件设置云端存储
+
+[Bangumi 番组计划](https://bgm.tv/)- [x] - [x] 
+
+*   [动画](https://bgm.tv/anime) 
+    *   [近期注目](https://bgm.tv/anime/browser/?sort=trends)[排行榜](https://bgm.tv/anime/chart)[分类浏览](https://bgm.tv/anime/browser)[动画标签](https://bgm.tv/anime/tag)
+    *   [每日放送](https://bgm.tv/calendar)
+    *   [动画日志](https://bgm.tv/anime/blog)
+
+*   [书籍](https://bgm.tv/book) 
+    *   [近期注目](https://bgm.tv/book/browser/?sort=trends)[排行榜](https://bgm.tv/book/chart)[分类浏览](https://bgm.tv/book/browser)[图书标签](https://bgm.tv/book/tag)
+    *   [图书日志](https://bgm.tv/book/blog)
+
+*   [音乐](https://bgm.tv/music) 
+    *   [近期注目](https://bgm.tv/music/browser/?sort=trends)[排行榜](https://bgm.tv/music/chart)[浏览全部](https://bgm.tv/music/browser)[音乐标签](https://bgm.tv/music/tag)
+    *   [音乐日志](https://bgm.tv/music/blog)
+
+*   [游戏](https://bgm.tv/game) 
+    *   [近期注目](https://bgm.tv/game/browser/?sort=trends)[排行榜](https://bgm.tv/game/chart)[平台浏览](https://bgm.tv/game/browser)[游戏标签](https://bgm.tv/game/tag)
+    *   [游戏日志](https://bgm.tv/game/blog)
+
+*   [三次元](https://bgm.tv/real) 
+    *   [近期注目](https://bgm.tv/real/browser/?sort=trends)[排行榜](https://bgm.tv/real/chart)[分类浏览](https://bgm.tv/real/browser)[三次元标签](https://bgm.tv/real/tag)
+    *   [三次元日志](https://bgm.tv/real/blog)
+
+*   [人物](https://bgm.tv/mono) 
+    *   [虚构角色](https://bgm.tv/character)
+    *   [现实人物](https://bgm.tv/person)
+
+*   [超展开](https://bgm.tv/rakuen)
+*   [小组](https://bgm.tv/group) 
+    *   [随便看看](https://bgm.tv/group/discover)
+    *   [所有小组](https://bgm.tv/group/all)
+
+*   [探索](javascript:void(0);) 
+    *   [时空管理局](https://bgm.tv/timeline)
+    *   [日志](https://bgm.tv/blog)[目录](https://bgm.tv/index)[维基人](https://bgm.tv/wiki)
+    *   [开发者平台](https://bgm.tv/dev)
+    *   [MAGI 问答](https://bgm.tv/magi)[Dollars](https://bgm.tv/dollars)
+    *   客户端[onAir](https://bgm.tv/onair)[Mobile](https://bgm.tv/group/topic/5155)
+    *   [天窗联盟](https://doujin.bgm.tv/)
+
+[登录](https://bgm.tv/login)[注册](https://bgm.tv/signup)
+
+# [![Image 1](https://lain.bgm.tv/pic/icon/l/000/00/41/4180.jpg?r=1519373244)番组开发](https://bgm.tv/group/dev) » [讨论](https://bgm.tv/group/dev/forum)
+
+[Guide] 组件设置云端存储
+
+* * *
+
+#1 - 2025-9-15 01:06
+
+[](https://bgm.tv/user/sai)
+
+**[Sai🖖](https://bgm.tv/user/sai)**(Awesome!)
+
+ 现在组件内可以调用自己的专用云存储字段用于存储可能需要的设置信息，信息跟随用户的组件启用状态，用户停用后将会删除相关信息。
+
+ 组件间的信息默认是隔离的，在组件中，可以调用 chiiApp.cloud_settings 库来获取以及更新自己的组件设置。
+
+ 设置字段在数据库中现在为 mediumtext 类型，且会在所有页面载入，请避免存储过大的字符串避免可能导致的前后端性能问题。
+
+ 更新设置
+
+chiiApp.cloud_settings.update({key: value, key2: value2});
+
+ 获取全部设置
+
+chiiApp.cloud_settings.getAll();
+
+ 获取指定 Key
+
+chiiApp.cloud_settings.get('key');
+
+ 删除 Key
+
+chiiApp.cloud_settings.delete('key');
+
+保存设置
+
+ 如果你将设置添加到自定义面板里，在关闭面板时 Bangumi 会自动帮你保存设置。
+
+ 你也可以手动调用保存方法来触发保存。
+
+chiiApp.cloud_settings.save();
+
+进阶
+
+ 如果你需要读取当前用户其他组件的设置，可以使用 chiiLib.cloud_settings 下的相关方法。
+
+ 这里有一个简单的组件实现默认个性化设置的同步，仅供参考：
+
+[https://bgm.tv/dev/app/4736](https://bgm.tv/dev/app/4736)
+
+[12](javascript:void(0); "<a href=\"/user/hyary\">Hyary</a>、<a href=\"/user/xiaoyvyv\">小玉</a>、<a href=\"/user/wataame\">綿飴</a>、<a href=\"/user/magisutan\">セドルイー</a>、<a href=\"/user/wtmsb\">1ra</a>、<a href=\"/user/703986\">Letheward</a>、<a href=\"/user/curediamond\">CureDiamond</a>、<a href=\"/user/eien\">默沨</a>、<a href=\"/user/flynncao\">Majimay</a>、<a href=\"/user/bai1wh\">白1wh</a>、<a href=\"/user/yonjar\">頂上ノ月🌙</a>、<a href=\"/user/ruocaled\">若卡</a>")[7](javascript:void(0); "<a href=\"/user/vickscarlet\">神戸小鳥</a>、<a href=\"/user/e_onion\">ᛖᛚᛗᛟ</a>、<a href=\"/user/inchei\">感觉统合失调</a>、<a href=\"/user/trytodupe\">trytodupe</a>、<a href=\"/user/puqns67\">Puqns67</a>、<a href=\"/user/bangumi_muxi\">木晞i</a>、<a href=\"/user/376958\">银姜</a>")[3](javascript:void(0); "<a href=\"/user/windwindwind\">DUE_SOUTH</a>、<a href=\"/user/36176\">豆沙包罐头</a>、<a href=\"/user/kedvfu\">星与幻灵</a>")
+
+[](https://bgm.tv/group/topic/435662#)
+
+[顺序](javascript:void(0);)
+*   [全部](javascript:void(0))
+*   [贴贴](javascript:void(0))
+*   [楼主](javascript:void(0))
+
+*   [顺序](javascript:void(0))
+*   [倒序](javascript:void(0))
+
+[#2](https://bgm.tv/group/topic/435662#post_3485208) - 2025-9-15 01:07
+
+[](https://bgm.tv/user/xiaoyvyv)
+
+**[小玉](https://bgm.tv/user/xiaoyvyv)**
+
+最近效率真高。
+
+[#3](https://bgm.tv/group/topic/435662#post_3485210) - 2025-9-15 01:09
+
+[](https://bgm.tv/user/hyary)
+
+**[Hyary](https://bgm.tv/user/hyary)**(‮✩ ‭<ゝω・)
+
+存储大小的限制是多少？
+
+[#3-1](https://bgm.tv/group/topic/435662#post_3485214) - 2025-9-15 01:16
+
+[](https://bgm.tv/user/wjself)
+
+**[灰灰](https://bgm.tv/user/wjself)**
+
+MEDIUMTEXT，16,777,215B(16MB)
+
+[2](javascript:void(0); "<a href=\"/user/hyary\">Hyary</a>、<a href=\"/user/curediamond\">CureDiamond</a>")
+
+[#4](https://bgm.tv/group/topic/435662#post_3485225) - 2025-9-15 01:24
+
+[](https://bgm.tv/user/hyary)
+
+**[Hyary](https://bgm.tv/user/hyary)**(‮✩ ‭<ゝω・)
+
+且会在所有页面载入
+
+希望读取操作可以选择按需请求，许多设置应该不需要经常读取的
+
+[#5](https://bgm.tv/group/topic/435662#post_3485252) - 2025-9-15 01:59
+
+[](https://bgm.tv/user/wtmsb)
+
+**[1ra](https://bgm.tv/user/wtmsb)**
+
+卧槽，这下真来了![Image 2: (bgm106)](https://bgm.tv/img/smiles/tv/83.gif)是时候更新所有组件了。
+
+ 新的显示bug：[https://bgm.tv/settings/gadgets](https://bgm.tv/settings/gadgets)里的组件始终显示未启用![Image 3](https://p.sda1.dev/27/8657f33b5f2fa44c737fc4a2020ebc31/image.png)
+
+[#6](https://bgm.tv/group/topic/435662#post_3485338) - 2025-9-15 04:51
+
+[](https://bgm.tv/user/wtmsb)
+
+**[1ra](https://bgm.tv/user/wtmsb)**
+
+无法删除组件的最后一个Key，保存并刷新后会重新出现
+
+[#6-1](https://bgm.tv/group/topic/435662#post_3485576) - 2025-9-15 11:13
+
+[](https://bgm.tv/user/sai)
+
+**[Sai🖖](https://bgm.tv/user/sai)**
+
+清下缓存再试试
+
+[#6-2](https://bgm.tv/group/topic/435662#post_3485578) - 2025-9-15 11:14
+
+[](https://bgm.tv/user/wtmsb)
+
+**[1ra](https://bgm.tv/user/wtmsb)**
+
+Sai🖖 说: 清下缓存再试试
+
+确认已修复，牛逼666
+
+[#7](https://bgm.tv/group/topic/435662#post_3486222) - 2025-9-15 18:46
+
+[](https://bgm.tv/user/inchei)
+
+**[感觉统合失调](https://bgm.tv/user/inchei)**(Tell me I'm a bad man, kick me like a stray)
+
+反馈一个组件问题，目前组件的 @match 和油猴标准 @match 不同，会将 search params 也算进去。例如，若我想让组件作用于 http*://bgm.tv/subject/*/add_related/character（不论是否带 search params），在油猴脚本，只需要写 http*://bgm.tv/subject/*/add_related/character，而在组件，必须写 http*://bgm.tv/subject/*/add_related/character*。
+
+[#8](https://bgm.tv/group/topic/435662#post_3486355) - 2025-9-15 20:31
+
+[](https://bgm.tv/user/animebangumicom)
+
+**[A·G·E](https://bgm.tv/user/animebangumicom)**
+
+通过“个性化-超合金组件”关闭的脚本，是否会清除相关信息？
+
+ 能否让开发者勾选“使用云端存储”，当用户关闭组件时提示组件缓存将被清空？
+
+[#8-1](https://bgm.tv/group/topic/435662#post_3486359) - 2025-9-15 20:36
+
+[](https://bgm.tv/user/animebangumicom)
+
+**[A·G·E](https://bgm.tv/user/animebangumicom)**
+
+第一条的答案是不会。第二条才是担心的。
+
+[#9](https://bgm.tv/group/topic/435662#post_3487686) - 2025-9-16 13:41
+
+[](https://bgm.tv/user/inchei)
+
+**[感觉统合失调](https://bgm.tv/user/inchei)**(Tell me I'm a bad man, kick me like a stray)
+
+原来只能在组件里用，希望能早日开放使用新站 API![Image 4: (bgm38)](https://bgm.tv/img/smiles/tv/15.gif)
+
+[#10](https://bgm.tv/group/topic/435662#post_3492124) - 2025-9-18 21:49
+
+[](https://bgm.tv/user/animebangumicom)
+
+**[A·G·E](https://bgm.tv/user/animebangumicom)**
+
+无法使组件中某个键值对的value变成{}，保存并刷新后会重新出现……
+
+[#10-1](https://bgm.tv/group/topic/435662#post_3492140) - 2025-9-18 22:05
+
+[](https://bgm.tv/user/sai)
+
+**[Sai🖖](https://bgm.tv/user/sai)**
+
+具体怎么操作的？
+
+[#10-2](https://bgm.tv/group/topic/435662#post_3492166) - 2025-9-18 22:22
+
+[](https://bgm.tv/user/animebangumicom)
+
+**[A·G·E](https://bgm.tv/user/animebangumicom)**
+
+Sai🖖 说: 具体怎么操作的？
+
+写了个脚本测试了下非空调用update改成空，确实没问题。应该是是我脚本自身保存时的处理不对
+
+[#11](https://bgm.tv/group/topic/435662#post_3492170) - 2025-9-18 22:23
+
+[](https://bgm.tv/user/yonjar)
+
+**[頂上ノ月🌙](https://bgm.tv/user/yonjar)**(DD雷达搜寻中...?)
+
+酷啊
+
+[#12](https://bgm.tv/group/topic/435662#post_3495357) - 2025-9-20 16:44
+
+[](https://bgm.tv/user/hyary)
+
+**[Hyary](https://bgm.tv/user/hyary)**(‮✩ ‭<ゝω・)
+
+所有存进去的值会被转换成字符串，但是又会保留嵌套的对象，当然嵌套对象里的值也会被转换成字符串![Image 5: (bgm58)](https://bgm.tv/img/smiles/tv/35.gif)
+
+ 举例：
+
+ .update({ answer: 42, deeper: { answer: true } })
+
+ .save()
+
+ 那么刷新后读取的值会是：
+
+ { answer: "42", deeper: { answer: "true" } }
+
+[#13](https://bgm.tv/group/topic/435662#post_3498352) - 2025-9-22 04:27
+
+[](https://bgm.tv/user/wtmsb)
+
+**[1ra](https://bgm.tv/user/wtmsb)**
+
+lz，能不能给save()加一个callback或者promise，以防保存失败![Image 6: (bgm72)](https://bgm.tv/img/smiles/tv/49.gif)
+
+[{num}](javascript:void(0); "{users}")
+
+[/ 返回番组开发小组](https://bgm.tv/group/dev)
+
+*   关于我们[关于我们](https://bgm.tv/about)[社区指导原则](https://bgm.tv/about/guideline)[版权声明](https://bgm.tv/about/copyright)[链接我们](https://bgm.tv/about/link2us)
+*   获取帮助[BBCode](https://bgm.tv/help/bbcode)[站务论坛](https://bgm.tv/group/forum)[番组开发](https://bgm.tv/group/dev)[BUG追踪](https://bgm.tv/group/issues)[天窗站务](https://bgm.tv/group/doujin)
+*   特别推荐[年鉴 2025](https://bgm.tv/award/2025) | [24](https://bgm.tv/award/2024) | [23](https://bgm.tv/award/2023) | [22](https://bgm.tv/award/2022) | [21](https://bgm.tv/award/2021) | [20](https://bgm.tv/award/2020) | [19](https://bgm.tv/award/2019) | [18](https://bgm.tv/award/2018) | [17](https://bgm.tv/award/2017) | [16](https://bgm.tv/award/2016) | [15](https://bgm.tv/award/2015) | [14](https://bgm.tv/award/2014) | [13](https://bgm.tv/award/2013) | [12](https://bgm.tv/award/2012) | [11](https://bgm.tv/award/2011) | [10](https://bgm.tv/award/2010)[TBA 2025](https://bgm.tv/award/2025/winner) | [24](https://bgm.tv/award/2024/winner)[番組WIKI計画](https://bgm.tv/group/wiki)[onAir 客户端](https://bgm.tv/onair)[etokei 绘时计](https://bgm.tv/tokei)
+*   更多[开发者平台](https://bgm.tv/dev)[目录](https://bgm.tv/index)[维基人](https://bgm.tv/wiki)[MAGI 问答](https://bgm.tv/magi)[周边](https://bgm.tv/goodies)[Dollars](https://bgm.tv/dollars)
+
+© 2008-2026 Bangumi (a.k.a.Chobits), some rights reserved | r742
+
+*   [登录](https://bgm.tv/login)[注册](https://bgm.tv/signup)
+*   [个性化](javascript:void(0); "个性化")
+*   [召唤](javascript:void(0);)
+
+ 没[注册](https://bgm.tv/signup)时我很沉默

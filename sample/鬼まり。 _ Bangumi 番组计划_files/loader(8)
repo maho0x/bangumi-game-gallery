@@ -1,0 +1,14 @@
+/* KaTeX 核心样式表 */
+@import url("https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css");
+
+/* 块级公式居中且允许横向滚动 */
+.bgm-math-block { 
+    text-align: center; 
+    margin: 1em 0; 
+    overflow-x: auto; 
+}
+
+/* 行内公式不换行 */
+.bgm-math-inline { 
+    display: inline-block; 
+}

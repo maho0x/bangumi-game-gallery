@@ -1,0 +1,9 @@
+#columnTimelineInnerWrapper ul.timelineTabs li a.global-timeline-focus,
+#columnTimelineInnerWrapper ul.timelineTabs li a.global-timeline-on {
+  color: white;
+  background: #4F93CF;
+}
+#columnTimelineInnerWrapper ul.timelineTabs li a.global-timeline-off {
+  color: white;
+  background: #F09199;
+}

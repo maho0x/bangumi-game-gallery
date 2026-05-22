@@ -1,0 +1,633 @@
+Title: [Guide] 组件个性化面板接口
+
+URL Source: https://bgm.tv/group/topic/435098
+
+Markdown Content:
+# [Guide] 组件个性化面板接口
+
+[Bangumi 番组计划](https://bgm.tv/)- [x] - [x] 
+
+*   [动画](https://bgm.tv/anime) 
+    *   [近期注目](https://bgm.tv/anime/browser/?sort=trends)[排行榜](https://bgm.tv/anime/chart)[分类浏览](https://bgm.tv/anime/browser)[动画标签](https://bgm.tv/anime/tag)
+    *   [每日放送](https://bgm.tv/calendar)
+    *   [动画日志](https://bgm.tv/anime/blog)
+
+*   [书籍](https://bgm.tv/book) 
+    *   [近期注目](https://bgm.tv/book/browser/?sort=trends)[排行榜](https://bgm.tv/book/chart)[分类浏览](https://bgm.tv/book/browser)[图书标签](https://bgm.tv/book/tag)
+    *   [图书日志](https://bgm.tv/book/blog)
+
+*   [音乐](https://bgm.tv/music) 
+    *   [近期注目](https://bgm.tv/music/browser/?sort=trends)[排行榜](https://bgm.tv/music/chart)[浏览全部](https://bgm.tv/music/browser)[音乐标签](https://bgm.tv/music/tag)
+    *   [音乐日志](https://bgm.tv/music/blog)
+
+*   [游戏](https://bgm.tv/game) 
+    *   [近期注目](https://bgm.tv/game/browser/?sort=trends)[排行榜](https://bgm.tv/game/chart)[平台浏览](https://bgm.tv/game/browser)[游戏标签](https://bgm.tv/game/tag)
+    *   [游戏日志](https://bgm.tv/game/blog)
+
+*   [三次元](https://bgm.tv/real) 
+    *   [近期注目](https://bgm.tv/real/browser/?sort=trends)[排行榜](https://bgm.tv/real/chart)[分类浏览](https://bgm.tv/real/browser)[三次元标签](https://bgm.tv/real/tag)
+    *   [三次元日志](https://bgm.tv/real/blog)
+
+*   [人物](https://bgm.tv/mono) 
+    *   [虚构角色](https://bgm.tv/character)
+    *   [现实人物](https://bgm.tv/person)
+
+*   [超展开](https://bgm.tv/rakuen)
+*   [小组](https://bgm.tv/group) 
+    *   [随便看看](https://bgm.tv/group/discover)
+    *   [所有小组](https://bgm.tv/group/all)
+
+*   [探索](javascript:void(0);) 
+    *   [时空管理局](https://bgm.tv/timeline)
+    *   [日志](https://bgm.tv/blog)[目录](https://bgm.tv/index)[维基人](https://bgm.tv/wiki)
+    *   [开发者平台](https://bgm.tv/dev)
+    *   [MAGI 问答](https://bgm.tv/magi)[Dollars](https://bgm.tv/dollars)
+    *   客户端[onAir](https://bgm.tv/onair)[Mobile](https://bgm.tv/group/topic/5155)
+    *   [天窗联盟](https://doujin.bgm.tv/)
+
+[登录](https://bgm.tv/login)[注册](https://bgm.tv/signup)
+
+# [![Image 3](https://lain.bgm.tv/pic/icon/l/000/00/41/4180.jpg?r=1519373244)番组开发](https://bgm.tv/group/dev) » [讨论](https://bgm.tv/group/dev/forum)
+
+[Guide] 组件个性化面板接口
+
+* * *
+
+#1 - 2025-9-10 19:52
+
+[](https://bgm.tv/user/sai)
+
+**[Sai🖖](https://bgm.tv/user/sai)**(Awesome!)
+
+ 你可以将自己的组件设置添加到「个性化」面板中，创建组件专用的选项或专属面板。
+
+添加选项至「通用」标签页
+
+![Image 4](https://lain.bgm.tv/pic/photo/l/c4/ca/1_u3irs.jpg)
+
+ 简单的开关可以通过以下方法添加到「通用」Tab 标签页：
+
+添加选项
+
+ 目前暂时只支持 radio 样式的选项
+
+chiiLib.ukagaka.addGeneralConfig({
+
+    title: '我的设置',
+
+    name: 'myCustomSetting',
+
+    type: 'radio',
+
+    defaultValue: 'default',
+
+    getCurrentValue: function() { return $.cookie('my_custom_setting') || 'default'; },
+
+    onChange: function(value) { $.cookie('my_custom_setting', value, {expires: 30, path: '/'}); },
+
+    options: [
+
+        { value: 'default', label: '默认' },
+
+        { value: 'custom', label: '自定义' }
+
+    ]
+
+});
+
+移除添加的选项
+
+chiiLib.ukagaka.removeGeneralConfig('myCustomSetting');
+
+添加专属面板 Tab 标签页
+
+![Image 5](https://lain.bgm.tv/pic/photo/l/c4/ca/1_EX5pX.jpg)
+
+ 你也可以添加完整的标签面板用于复杂功能的设置：
+
+添加标签页
+
+chiiLib.ukagaka.addPanelTab({
+
+    tab: 'my_app',
+
+    label: '我的应用',
+
+    type: 'options',
+
+    config: [
+
+        {
+
+            title: '示例设置',
+
+            name: 'myAppSetting',
+
+            type: 'radio',
+
+            defaultValue: 'option1',
+
+            getCurrentValue: function() { return $.cookie('my_app_setting') || 'option1'; },
+
+            onChange: function(value) { $.cookie('my_app_setting', value, {expires: 30, path: '/'}); },
+
+            options: [
+
+                { value: 'option1', label: '选项1' },
+
+                { value: 'option2', label: '选项2' }
+
+            ]
+
+        }
+
+    ]
+
+});
+
+ 或者自定义内容:
+
+chiiLib.ukagaka.addPanelTab({
+
+    tab: 'custom_tab',
+
+    label: '自定义',
+
+    type: 'custom',
+
+    customContent: function() {
+
+        return '<div class="custom-content"><h3>自定义内容</h3><p>这里可以放任何HTML内容</p></div>';
+
+    }
+
+});
+
+ 自定义面板事件绑定:
+
+chiiLib.ukagaka.addPanelTab({
+
+    tab: 'my_custom_tab',
+
+    label: '我的标签',
+
+    type: 'custom',
+
+    customContent: function() {
+
+        return `
+
+            <div class="custom-content">
+
+                <h3>自定义功能</h3>
+
+                <button class="btnBlue my-custom-btn" data-action="test">测试按钮</button>
+
+                <div id="custom-result"></div>
+
+            </div>
+
+        `;
+
+    },
+
+    onInit: function(tabSelector, $tabContent) {
+
+        // 接收选择器名称和对应的 jQuery DOM 对象
+
+        // 注意：onInit 只会在首次切换到该标签页时执行一次，不会重复绑定
+
+        var self = this;
+
+        console.log('标签页初始化:', tabSelector, $tabContent);
+
+        
+
+        // 直接使用 $tabContent 进行事件绑定
+
+        $tabContent.off('click', '.my-custom-btn').on('click', '.my-custom-btn', function(e) {
+
+            e.preventDefault();
+
+            var action = $(this).data('action');
+
+            $tabContent.find('#custom-result').html('按钮被点击了：' + action);
+
+            console.log('自定义按钮事件触发', action);
+
+        });
+
+    }
+
+});
+
+移除 Tab 标签页
+
+chiiLib.ukagaka.removePanelTab('custom_tab');
+
+显示标签页或高亮选项
+
+显示指定标签页
+
+chiiLib.ukagaka.showCustomizePanelWithTab('widgets');
+
+滚动并高亮选项
+
+chiiLib.ukagaka.showCustomizePanelWithSection('general', 'avatarSize');
+
+[13](javascript:void(0); "<a href=\"/user/376958\">银姜</a>、<a href=\"/user/miozx\">風</a>、<a href=\"/user/wataame\">綿飴</a>、<a href=\"/user/hexsix\">🦋喵小六❄️</a>、<a href=\"/user/vroided\">食欲幽灵</a>、<a href=\"/user/zi_rannanodesu\">zi_ran</a>、<a href=\"/user/bangumi_muxi\">木晞i</a>、<a href=\"/user/magisutan\">セドルイー</a>、<a href=\"/user/kingap\">夜坐听风</a>、<a href=\"/user/813162\">Jeffrey</a>、<a href=\"/user/trytodupe\">trytodupe</a>、<a href=\"/user/lowguigui\">糊涂的low鬼</a>、<a href=\"/user/eien\">默沨</a>")[4](javascript:void(0); "<a href=\"/user/windwindwind\">DUE_SOUTH</a>、<a href=\"/user/kedvfu\">星与幻灵</a>、<a href=\"/user/hyary\">Hyary</a>、<a href=\"/user/jan30chen\">Jan30chen</a>")[4](javascript:void(0); "<a href=\"/user/437757\">=L=+</a>、<a href=\"/user/wtmsb\">1ra</a>、<a href=\"/user/liang0721gs\">凉</a>、<a href=\"/user/yonjar\">頂上ノ月🌙</a>")[1](javascript:void(0); "<a href=\"/user/36176\">豆沙包罐头</a>")
+
+[顺序](javascript:void(0);)
+*   [全部](javascript:void(0))
+*   [贴贴](javascript:void(0))
+*   [楼主](javascript:void(0))
+
+*   [顺序](javascript:void(0))
+*   [倒序](javascript:void(0))
+
+[#2](https://bgm.tv/group/topic/435098#post_3475650) - 2025-9-10 20:00
+
+[](https://bgm.tv/user/xiaoyvyv)
+
+**[小玉](https://bgm.tv/user/xiaoyvyv)**
+
+![Image 6: (bgm24)](https://bgm.tv/img/smiles/tv/01.gif)
+
+[#3](https://bgm.tv/group/topic/435098#post_3475655) - 2025-9-10 20:03
+
+[](https://bgm.tv/user/36176)
+
+**[豆沙包罐头](https://bgm.tv/user/36176)**
+
+这个方便不少 // 好像改动了啥导致我那脚本炸了…过几天再修![Image 7: (bgm116)](https://bgm.tv/img/smiles/tv/93.gif)忘了思考为什么这个改动会导致之前的方法炸了，算了
+
+为什么有的组件名字是未知组件 原来是这样，加了，而且经常列表显示不全，感觉这个 tab 还有得修..
+
+[#4](https://bgm.tv/group/topic/435098#post_3475657) - 2025-9-10 20:04
+
+[](https://bgm.tv/user/hexsix)
+
+**[🦋喵小六❄️](https://bgm.tv/user/hexsix)**(616.sb)
+
+这个好
+
+[#5](https://bgm.tv/group/topic/435098#post_3475659) - 2025-9-10 20:07
+
+[](https://bgm.tv/user/wtmsb)
+
+**[1ra](https://bgm.tv/user/wtmsb)**
+
+好东西
+
+ 这下localStorage可以退休了
+
+[#5-1](https://bgm.tv/group/topic/435098#post_3475680) - 2025-9-10 20:25
+
+[](https://bgm.tv/user/sai)
+
+**[Sai🖖](https://bgm.tv/user/sai)**
+
+存哪都可以，其实不是很推荐放 cookie 里。
+
+[2](javascript:void(0); "<a href=\"/user/437757\">=L=+</a>、<a href=\"/user/kedvfu\">星与幻灵</a>")
+
+[#5-2](https://bgm.tv/group/topic/435098#post_3475702) - 2025-9-10 20:46
+
+[](https://bgm.tv/user/wtmsb)
+
+**[1ra](https://bgm.tv/user/wtmsb)**
+
+Sai🖖 说: 存哪都可以，其实不是很推荐放 cookie 里。
+
+等等，我好像理解错了
+
+ 这改动只是加了个自定义UI，组件设置还是只能存本地，不支持跨设备同步![Image 8: (bgm38)](https://bgm.tv/img/smiles/tv/15.gif)空欢喜一场了
+
+ 所以这个啥时候能兑现啊哥![Image 9: (bgm74)](https://bgm.tv/img/smiles/tv/51.gif)
+
+![Image 10](https://p.sda1.dev/26/037ac40c10343a460e44a34c5e8cbe0a/image.png)
+
+[#5-3](https://bgm.tv/group/topic/435098#post_3475776) - 2025-9-10 21:45
+
+[](https://bgm.tv/user/inchei)
+
+**[感觉统合失调](https://bgm.tv/user/inchei)**
+
+1ra 说: 等等，我好像理解错了
+
+ 这改动只是加了个自定义UI，组件设置还是只能存本地，不支持跨设备同步空欢喜一场了
+
+ 所以这个啥时候能兑现啊哥
+
+关注爱赛TV，了解最新动态 [https://bgm.tv/group/topic/433247#post_3444663](https://bgm.tv/group/topic/433247#post_3444663)
+
+[#5-4](https://bgm.tv/group/topic/435098#post_3475812) - 2025-9-10 22:00
+
+[](https://bgm.tv/user/wtmsb)
+
+**[1ra](https://bgm.tv/user/wtmsb)**
+
+流浪人你若到斯巴 说: 关注爱赛TV，了解最新动态 https://bgm.tv/group/topic/433247#post_3444663
+
+哎，小团体
+
+[#5-5](https://bgm.tv/group/topic/435098#post_3475946) - 2025-9-10 22:53
+
+[](https://bgm.tv/user/inchei)
+
+**[感觉统合失调](https://bgm.tv/user/inchei)**
+
+1ra 说: 哎，小团体
+
+我和 sai 是小团体，这都被你知道了
+
+[#6](https://bgm.tv/group/topic/435098#post_3475660) - 2025-9-10 20:08
+
+[](https://bgm.tv/user/437757)
+
+**[=L=+](https://bgm.tv/user/437757)**
+
+蒸蒸日上
+
+[#7](https://bgm.tv/group/topic/435098#post_3475662) - 2025-9-10 20:08
+
+[](https://bgm.tv/user/qq624130658)
+
+**[老悠](https://bgm.tv/user/qq624130658)**
+
+更新这么频繁是打算把版谷米卖了吗
+
+[#7-1](https://bgm.tv/group/topic/435098#post_3475673) - 2025-9-10 20:18
+
+[](https://bgm.tv/user/249165)
+
+**[‭神‭户高‭达](https://bgm.tv/user/249165)**
+
+萌娘珠玉在前，你不要为sai提供思路害我们bangumi没得用![Image 11: (bgm38)](https://bgm.tv/img/smiles/tv/15.gif)就经验而言一般班卖了，就没班味了，就不是原来那个班了
+
+[#7-2](https://bgm.tv/group/topic/435098#post_3475764) - 2025-9-10 21:38
+
+[](https://bgm.tv/user/kingap)
+
+**[夜坐听风](https://bgm.tv/user/kingap)**
+
+Sai准备脱宅了![Image 12: (bgm38)](https://bgm.tv/img/smiles/tv/15.gif)
+
+[#7-3](https://bgm.tv/group/topic/435098#post_3475817) - 2025-9-10 22:04
+
+[](https://bgm.tv/user/36176)
+
+**[豆沙包罐头](https://bgm.tv/user/36176)**
+
+投 名 状
+
+[#8](https://bgm.tv/group/topic/435098#post_3475667) - 2025-9-10 20:14
+
+[](https://bgm.tv/user/inchei)
+
+**[感觉统合失调](https://bgm.tv/user/inchei)**(Tell me I'm a bad man, kick me like a stray)
+
+建议加个 webhook，GitHub 上更新脚本直接同步到组件![Image 13: (bgm63)](https://bgm.tv/img/smiles/tv/40.gif)
+
+[#9](https://bgm.tv/group/topic/435098#post_3475678) - 2025-9-10 20:20
+
+[](https://bgm.tv/user/eien)
+
+**[默沨](https://bgm.tv/user/eien)**(欲买桂花同载酒，终不似，少年游。)
+
+好耶
+
+[#10](https://bgm.tv/group/topic/435098#post_3475692) - 2025-9-10 20:39
+
+[](https://bgm.tv/user/abracadabra)
+
+**[缇亚拉](https://bgm.tv/user/abracadabra)**(I solemnly swear that I am up to no good)
+
+何意味，根本看不懂
+
+[#11](https://bgm.tv/group/topic/435098#post_3475695) - 2025-9-10 20:42
+
+[](https://bgm.tv/user/249165)
+
+**[‭神‭户高‭达](https://bgm.tv/user/249165)**(你的时间很值钱，别浪费在垃圾内容)
+
+个性化-超合金组件，部分组件标题缺失
+
+[#11-1](https://bgm.tv/group/topic/435098#post_3475731) - 2025-9-10 21:12
+
+[](https://bgm.tv/user/703986)
+
+**[Letheward](https://bgm.tv/user/703986)**
+
+我的组件就没有，看上去那个标题是用的代码里 UserScript 注释的 @ name（我没写）。
+
+ 感觉直接用组件名会更好些![Image 14: (bgm38)](https://bgm.tv/img/smiles/tv/15.gif)
+
+[#11-2](https://bgm.tv/group/topic/435098#post_3475750) - 2025-9-10 21:25
+
+[](https://bgm.tv/user/36176)
+
+**[豆沙包罐头](https://bgm.tv/user/36176)**
+
+Letheward 说: 我的组件就没有，看上去那个标题是用的代码里 UserScript 注释的 @ name（我没写）。
+
+ 感觉直接用组件名会更好些
+
+原来如此，我也给我的加上去好了
+
+[#12](https://bgm.tv/group/topic/435098#post_3476075) - 2025-9-10 23:44
+
+[](https://bgm.tv/user/778519)
+
+**[墨](https://bgm.tv/user/778519)**(简单的追番人)
+
+真不错，给我的NSFW添加了![Image 15](https://p.sda1.dev/26/d6fd863966cc8fb8bc1206e7335477b5/image.png)
+
+[#13](https://bgm.tv/group/topic/435098#post_3476363) - 2025-9-11 03:49
+
+[](https://bgm.tv/user/437960)
+
+**[他说nil没法调用IsNil](https://bgm.tv/user/437960)**(nobody cares.)
+
+咱们需要一套组件规范了。
+
+[4](javascript:void(0); "<a href=\"/user/zin\">梓N🔝</a>、<a href=\"/user/798743\">forary</a>、<a href=\"/user/kairos\">hahaha</a>、<a href=\"/user/flynncao\">Majimay</a>")
+
+[#14](https://bgm.tv/group/topic/435098#post_3482614) - 2025-9-13 21:17
+
+[](https://bgm.tv/user/prevails)
+
+**[Donuts](https://bgm.tv/user/prevails)**
+
+![Image 16: (bgm37)](https://bgm.tv/img/smiles/tv/14.gif)
+
+[#15](https://bgm.tv/group/topic/435098#post_3483792) - 2025-9-14 12:21
+
+[](https://bgm.tv/user/vickscarlet)
+
+**[神戸小鳥](https://bgm.tv/user/vickscarlet)**(VIKKE)
+
+[@Sai🖖](https://bgm.tv/user/sai) chiiLib.ukagaka.addPanelTab 添加专属面板 Tab 标签页功能在当前页面还没点开个性化面板的时候调用会把通用页和超合金组件页给挤掉，而打开过一次面板后通用页就不会被挤掉，
+
+ 原因应该是这里，addPanelTab 后，this.panelTabs.length 就不为 0 了
+
+![Image 17](https://p.sda1.dev/27/07edeca05c02e1b9c3207fc73d882991/%E5%9B%BE%E7%89%87.png)
+
+![Image 18](https://p.sda1.dev/27/47cfa4e17e0af91e4149ac3d8ed811c8/%E5%9B%BE%E7%89%87.png)
+
+![Image 19](https://p.sda1.dev/27/f956913a7ed78ead1197aad3b6aafdbf/%E5%9B%BE%E7%89%87.png)
+
+[#15-1](https://bgm.tv/group/topic/435098#post_3483933) - 2025-9-14 13:17
+
+[](https://bgm.tv/user/sai)
+
+**[Sai🖖](https://bgm.tv/user/sai)**
+
+修了
+
+[#16](https://bgm.tv/group/topic/435098#post_3483827) - 2025-9-14 12:29
+
+[](https://bgm.tv/user/vickscarlet)
+
+**[神戸小鳥](https://bgm.tv/user/vickscarlet)**(VIKKE)
+
+顺便附一个 types, 写 ts 的同学有福了![Image 20: (bgm207)](https://bgm.tv/img/smiles/tv_vs/bgm_207.png)
+
+interface GeneralConfigRadioParams {
+
+    title: string
+
+    name: string
+
+    type: 'radio'
+
+    defaultValue: string
+
+    getCurrentValue: () => void
+
+    onChange: (value: string) => void
+
+    options: { value: string; label: string }[]
+
+}
+
+type GeneralConfigParams = GeneralConfigRadioParams
+
+interface PanelTabOptionsParams {
+
+    type: 'options'
+
+    tab: string
+
+    label: string
+
+    config: GeneralConfigParams[]
+
+}
+
+interface PanelTabCustomParams {
+
+    type: 'custom'
+
+    tab: string
+
+    label: string
+
+    customContent: () => string
+
+}
+
+type PanelTabParams = PanelTabOptionsParams | PanelTabCustomParams
+
+var chiiLib: {
+
+    ukagaka: {
+
+        addGeneralConfig(params: GeneralConfigParams): void
+
+        removeGeneralConfig(name: string): void
+
+        addPanelTab(params: PanelTabParams): void
+
+        removePanelTab(name: string): void
+
+    }
+
+}
+
+[#16-1](https://bgm.tv/group/topic/435098#post_3483925) - 2025-9-14 13:12
+
+[](https://bgm.tv/user/sai)
+
+**[Sai🖖](https://bgm.tv/user/sai)**
+
+TS 声明看这里：
+
+[https://bgm.tv/dev/app/8](https://bgm.tv/dev/app/8)
+
+[1](javascript:void(0); "<a href=\"/user/vickscarlet\">神戸小鳥</a>")
+
+[#17](https://bgm.tv/group/topic/435098#post_3483941) - 2025-9-14 13:23
+
+[](https://bgm.tv/user/vickscarlet)
+
+**[神戸小鳥](https://bgm.tv/user/vickscarlet)**(VIKKE)
+
+custom 好像没给事件绑定的方法，也不能返回一个 Element 对象![Image 21: (bgm38)](https://bgm.tv/img/smiles/tv/15.gif)
+
+[#17-1](https://bgm.tv/group/topic/435098#post_3484174) - 2025-9-14 16:10
+
+[](https://bgm.tv/user/sai)
+
+**[Sai🖖](https://bgm.tv/user/sai)**
+
+好了
+
+[1](javascript:void(0); "<a href=\"/user/vickscarlet\">神戸小鳥</a>")
+
+[#18](https://bgm.tv/group/topic/435098#post_3493591) - 2025-9-19 18:10
+
+[](https://bgm.tv/user/ivan417)
+
+**[Ivan417](https://bgm.tv/user/ivan417)**
+
+包括雲端存儲 目前不支援超展開![Image 22: (bgm38)](https://bgm.tv/img/smiles/tv/15.gif)
+
+ 原來不是不支援 只是超展開那個架構本來就會那樣
+
+[#19](https://bgm.tv/group/topic/435098#post_3513498) - 2025-9-30 18:46
+
+[](https://bgm.tv/user/36176)
+
+**[豆沙包罐头](https://bgm.tv/user/36176)**
+
+UserScript 注释的 @ name
+
+手头有两个组件加了这个也不显示名字..
+
+[#20](https://bgm.tv/group/topic/435098#post_3829306) - 2026-4-13 12:57
+
+[](https://bgm.tv/user/ruocaled)
+
+**[若卡](https://bgm.tv/user/ruocaled)**(VIP已到期，请尽快续费)
+
+超展开里用不了+1，[https://bgm.tv/rakuen](https://bgm.tv/rakuen)不加载组件，但dock是在这个页面。
+
+ 说实话这个地方一点点小，不如移到[https://bgm.tv/settings](https://bgm.tv/settings)
+
+[{num}](javascript:void(0); "{users}")
+
+[/ 返回番组开发小组](https://bgm.tv/group/dev)
+
+*   关于我们[关于我们](https://bgm.tv/about)[社区指导原则](https://bgm.tv/about/guideline)[版权声明](https://bgm.tv/about/copyright)[链接我们](https://bgm.tv/about/link2us)
+*   获取帮助[BBCode](https://bgm.tv/help/bbcode)[站务论坛](https://bgm.tv/group/forum)[番组开发](https://bgm.tv/group/dev)[BUG追踪](https://bgm.tv/group/issues)[天窗站务](https://bgm.tv/group/doujin)
+*   特别推荐[年鉴 2025](https://bgm.tv/award/2025) | [24](https://bgm.tv/award/2024) | [23](https://bgm.tv/award/2023) | [22](https://bgm.tv/award/2022) | [21](https://bgm.tv/award/2021) | [20](https://bgm.tv/award/2020) | [19](https://bgm.tv/award/2019) | [18](https://bgm.tv/award/2018) | [17](https://bgm.tv/award/2017) | [16](https://bgm.tv/award/2016) | [15](https://bgm.tv/award/2015) | [14](https://bgm.tv/award/2014) | [13](https://bgm.tv/award/2013) | [12](https://bgm.tv/award/2012) | [11](https://bgm.tv/award/2011) | [10](https://bgm.tv/award/2010)[TBA 2025](https://bgm.tv/award/2025/winner) | [24](https://bgm.tv/award/2024/winner)[番組WIKI計画](https://bgm.tv/group/wiki)[onAir 客户端](https://bgm.tv/onair)[etokei 绘时计](https://bgm.tv/tokei)
+*   更多[开发者平台](https://bgm.tv/dev)[目录](https://bgm.tv/index)[维基人](https://bgm.tv/wiki)[MAGI 问答](https://bgm.tv/magi)[周边](https://bgm.tv/goodies)[Dollars](https://bgm.tv/dollars)
+
+© 2008-2026 Bangumi (a.k.a.Chobits), some rights reserved | r742
+
+*   [登录](https://bgm.tv/login)[注册](https://bgm.tv/signup)
+*   [个性化](javascript:void(0); "个性化")
+*   [](javascript:void(0);)
+
+ 没[注册](https://bgm.tv/signup)时我很沉默

@@ -1,0 +1,48 @@
+/*sort buttons*/
+.cedar-sort-and-filter-plugin-main-wrapper .button-wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+.cedar-sort-and-filter-plugin-main-wrapper a.chiiBtn {
+  min-width: max-content;
+}
+.cedar-sort-and-filter-plugin-main-wrapper a.chiiBtn:hover {
+  cursor: pointer;
+}
+.cedar-sort-and-filter-plugin-main-wrapper a.chiiBtn[data-order="descend"]::after {
+  content: '↓';
+}
+.cedar-sort-and-filter-plugin-main-wrapper a.chiiBtn[data-order="ascend"]::after {
+  content: '↑';
+}
+/* filters
+ * 这里必须用 flex-wrap: wrap 否则不知为啥toggle函数会没反应 */
+.cedar-sort-and-filter-plugin-main-wrapper .filter-ui-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  font-size: 14px;
+  /* 后几项是为slide效果做准备 */
+  overflow: hidden;
+  transition: height 0.3s ease-out;
+  height: auto;
+}
+.cedar-sort-and-filter-plugin-main-wrapper .filter-unit-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+}
+.cedar-sort-and-filter-plugin-main-wrapper .filter-unit-wrapper>div {
+  margin: 0 0.2em;
+}
+.cedar-sort-and-filter-plugin-main-wrapper .filter-unit-wrapper input {
+  margin: 0.2em;
+  padding: 3px;
+}
+/* 筛选结果的显示 */
+ul.usersLarge .cedar-sort-and-filter-plugin-hide-this, /* 新 UI 的评分页如 subject/{id}/collections 的 CSS 会把这个样式覆盖，为了获得高优先级，添加了一个 ul.userLarge 的父选择器 */
+.cedar-sort-and-filter-plugin-hide-this {
+  display: none;
+}
+.unknown-registration-time, html[data-theme='dark'] .unknown-registration-time {
+  background-color: rgba(255,46,61,0.2);
+}

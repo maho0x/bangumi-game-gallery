@@ -1,0 +1,21 @@
+#friend_watch_detail .userContainer strong span.userImage {
+        float: left;
+        margin: 0 0 0 -60px;
+    }
+    #friend_watch_detail div.userContainer strong {
+        display: block;
+        border-bottom: 1px solid #CCC;
+    }
+    #friend_watch_detail div.userContainer {
+        background: white;
+        position: absolute;
+        border-radius: 5px;
+        box-shadow: 0 0 5px grey;
+        padding: 10px 10px 5px 70px;
+        max-width: 270px;
+        display: none;
+    }
+    html[data-theme="dark"] #friend_watch_detail div.userContainer {
+        background-image: none !important;
+        background-color: #2d2e2f !important;
+    }
