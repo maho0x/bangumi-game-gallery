@@ -31,6 +31,63 @@ const DOM_NO_VNDB = `<head></head><body>
 const SFW_SHOT  = { id: 'sf1', url: 'https://s.vndb.org/sf/01/full.jpg', dims: [1280,720], sexual: 0, violence: 0, thumbnail: 'https://s.vndb.org/sf/01/th.jpg', thumbnail_dims: [320,180] };
 const NSFW_SHOT = { id: 'sf2', url: 'https://s.vndb.org/sf/02/full.jpg', dims: [1280,720], sexual: 2, violence: 0, thumbnail: 'https://s.vndb.org/sf/02/th.jpg', thumbnail_dims: [320,180] };
 
+const DLSITE_RJ_URL = 'https://www.dlsite.com/maniax/work/=/product_id/RJ305720.html';
+const DLSITE_VJ_URL = 'https://www.dlsite.com/maniax/work/=/product_id/VJ010793.html';
+
+const DOM_WITH_DLSITE_ONLY = `<head></head><body>
+  <ul id="infobox">
+    <li class="sub_group">
+      <span class="tip">链接: </span>
+      <a href="${DLSITE_RJ_URL}">DLsite</a>
+    </li>
+  </ul>
+  <div id="columnSubjectHomeB">
+    <div id="columnSubjectInHomeB">
+      <div id="subject_detail"></div>
+    </div>
+  </div>
+</body>`;
+
+const DOM_WITH_BOTH = `<head></head><body>
+  <ul id="infobox">
+    <li class="sub_group">
+      <span class="tip">链接: </span>
+      <a href="https://vndb.org/v26307">VNDB</a>
+    </li>
+    <li class="sub_group">
+      <span class="tip">链接: </span>
+      <a href="${DLSITE_RJ_URL}">DLsite</a>
+    </li>
+  </ul>
+  <div id="columnSubjectHomeB">
+    <div id="columnSubjectInHomeB">
+      <div id="subject_detail"></div>
+    </div>
+  </div>
+</body>`;
+
+/* mockImageProbe — synchronously fires onload/onerror when img.src is set.
+   outcomes: array of 'load'|'error' strings, one per Image() call in order.
+   Read probed URLs after loadComponent() via mockImageProbe.urls. */
+const OriginalImage = global.Image;
+function mockImageProbe(outcomes) {
+  const probedUrls = [];
+  let callIdx = 0;
+  global.Image = function () {
+    const self = this;
+    const myIdx = callIdx++;
+    Object.defineProperty(self, 'src', {
+      set(url) {
+        probedUrls.push(url);
+        const result = myIdx < outcomes.length ? outcomes[myIdx] : 'error';
+        if (result === 'load') { self.onload && self.onload(); }
+        else { self.onerror && self.onerror(); }
+      }
+    });
+  };
+  mockImageProbe.urls = probedUrls;
+}
+
 function mockFetch(screenshots) {
   global.fetch = jest.fn().mockResolvedValue({
     ok: true,
@@ -58,6 +115,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  global.Image = OriginalImage;
   document.documentElement.innerHTML = '';
 });
 
