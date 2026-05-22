@@ -642,3 +642,76 @@ describe('DLsite lightbox', () => {
     expect(document.getElementById('vndb-lb-img').src).toBe(SFW_SHOT.url);
   });
 });
+
+describe('DLsite R18 setting', () => {
+  function mockCloudSettings(settings) {
+    global.chiiApp = {
+      cloud_settings: {
+        get: function(key) { return settings[key] !== undefined ? settings[key] : null; },
+        update: jest.fn(),
+        save: jest.fn()
+      }
+    };
+  }
+
+  afterEach(() => {
+    delete global.chiiApp;
+  });
+
+  test('DLsite thumbs have R18 mask when dlsiteR18 enabled', async () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockCloudSettings({ dlsiteR18: '1', defaultSource: 'dlsite' });
+    mockFetch([]);
+    mockImageProbe(['load', 'load', 'error']);
+    loadComponent();
+    await flushPromises();
+    const masks = document.querySelectorAll('#dlsite-grid .vndb-mask');
+    expect(masks.length).toBe(2);
+    expect(masks[0].textContent).toBe('R18');
+  });
+
+  test('DLsite thumbs have no mask when dlsiteR18 disabled', async () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockCloudSettings({ dlsiteR18: '0', defaultSource: 'dlsite' });
+    mockFetch([]);
+    mockImageProbe(['load', 'load', 'error']);
+    loadComponent();
+    await flushPromises();
+    expect(document.querySelectorAll('#dlsite-grid .vndb-mask').length).toBe(0);
+  });
+
+  test('gallery has dlsite-r18 class when setting enabled', async () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockCloudSettings({ dlsiteR18: '1', defaultSource: 'dlsite' });
+    mockFetch([]);
+    mockImageProbe(['load', 'load', 'error']);
+    loadComponent();
+    await flushPromises();
+    expect(document.getElementById('vndb-screenshot-gallery').classList.contains('dlsite-r18')).toBe(true);
+  });
+
+  test('toggle adds show-nsfw to dlsite-grid when dlsiteR18 enabled', async () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockCloudSettings({ dlsiteR18: '1', defaultSource: 'dlsite', showNsfw: '0' });
+    mockFetch([]);
+    mockImageProbe(['load', 'load', 'error']);
+    loadComponent();
+    await flushPromises();
+    const dlsiteGrid = document.getElementById('dlsite-grid');
+    expect(dlsiteGrid.classList.contains('show-nsfw')).toBe(false);
+    document.getElementById('vndb-nsfw-toggle').click();
+    expect(dlsiteGrid.classList.contains('show-nsfw')).toBe(true);
+  });
+
+  test('toggle does not affect dlsite-grid when dlsiteR18 disabled', async () => {
+    document.documentElement.innerHTML = DOM_WITH_BOTH;
+    mockCloudSettings({ dlsiteR18: '0', defaultSource: 'vndb' });
+    mockFetch([SFW_SHOT]);
+    mockImageProbe(['load', 'load', 'error']);
+    loadComponent();
+    await flushPromises();
+    const dlsiteGrid = document.getElementById('dlsite-grid');
+    document.getElementById('vndb-nsfw-toggle').click();
+    expect(dlsiteGrid.classList.contains('show-nsfw')).toBe(false);
+  });
+});

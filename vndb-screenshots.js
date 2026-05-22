@@ -162,6 +162,7 @@
       '.vndb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }',
       '.vndb-mask { position: absolute; inset: 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: bold; letter-spacing: 1px; }',
       '#vndb-grid.show-nsfw .vndb-mask { display: none; }',
+      '#dlsite-grid.show-nsfw .vndb-mask { display: none; }',
       '.vndb-status { color: #999; font-size: 13px; padding: 8px 0; }',
       '#vndb-lightbox { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; }',
       '#vndb-lb-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.88); }',
@@ -180,7 +181,7 @@
       '#vndb-screenshot-gallery .vndb-tab-active { cursor: default; color: var(--primary-color); border-color: var(--primary-color); }',
       '#vndb-screenshot-gallery.dlsite-active #vndb-grid { display: none; }',
       '#vndb-screenshot-gallery.dlsite-active #dlsite-grid { display: flex; }',
-      '#vndb-screenshot-gallery.dlsite-active .vndb-switch { display: none; }'
+      '#vndb-screenshot-gallery.dlsite-active:not(.dlsite-r18) .vndb-switch { display: none; }'
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -210,6 +211,7 @@
 
   function renderDlsiteGrid(images) {
     var grid = document.getElementById('dlsite-grid');
+    var hasDlsiteR18 = cloudGet('dlsiteR18') === '1';
     grid.innerHTML = '';
     images.forEach(function (image, i) {
       var thumb = document.createElement('div');
@@ -221,20 +223,34 @@
       img.loading = 'lazy';
       thumb.appendChild(img);
 
+      if (hasDlsiteR18) {
+        var mask = document.createElement('div');
+        mask.className = 'vndb-mask';
+        mask.textContent = 'R18';
+        thumb.appendChild(mask);
+      }
+
       grid.appendChild(thumb);
     });
   }
 
   function initNsfwToggle() {
-    var grid  = document.getElementById('vndb-grid');
-    var input = document.getElementById('vndb-nsfw-toggle');
+    var grid       = document.getElementById('vndb-grid');
+    var dlsiteGrid = document.getElementById('dlsite-grid');
+    var input      = document.getElementById('vndb-nsfw-toggle');
+    var hasDlsiteR18 = cloudGet('dlsiteR18') === '1';
     var cloudVal = cloudGet('showNsfw');
     var showNsfw = cloudVal !== null ? cloudVal === '1' : localStorage.getItem('vndb_show_nsfw') === '1';
 
     function applyState() {
       input.checked = showNsfw;
-      if (showNsfw) { grid.classList.add('show-nsfw'); }
-      else          { grid.classList.remove('show-nsfw'); }
+      if (showNsfw) {
+        grid.classList.add('show-nsfw');
+        if (hasDlsiteR18) { dlsiteGrid.classList.add('show-nsfw'); }
+      } else {
+        grid.classList.remove('show-nsfw');
+        if (hasDlsiteR18) { dlsiteGrid.classList.remove('show-nsfw'); }
+      }
     }
 
     applyState();
@@ -409,6 +425,9 @@
     if ((cloudGet('defaultSource') || 'dlsite') === 'dlsite') {
       gallery.classList.add('dlsite-active');
     }
+    if (cloudGet('dlsiteR18') === '1') {
+      gallery.classList.add('dlsite-r18');
+    }
 
     var vndbResult   = null;
     var dlsiteImages = null;
@@ -436,6 +455,7 @@
       } else if (hasDlsite) {
         renderDlsiteGrid(dlsiteImages);
         configureSingleSource('dlsite');
+        if (cloudGet('dlsiteR18') === '1') { initNsfwToggle(); }
         lbInstance = initLightbox([]);
         document.getElementById('dlsite-grid').addEventListener('click', function (e) {
           var thumb = e.target.closest('.vndb-thumb');
@@ -490,6 +510,18 @@
         options: [
           { value: 'vndb', label: 'VNDB' },
           { value: 'dlsite', label: 'DLsite' }
+        ]
+      });
+      chiiLib.ukagaka.addGeneralConfig({
+        title: 'DLsite默认R18',
+        name: 'dlsiteR18',
+        type: 'radio',
+        defaultValue: '0',
+        getCurrentValue: function() { return cloudGet('dlsiteR18') || '0'; },
+        onChange: function(value) { cloudSet('dlsiteR18', value); },
+        options: [
+          { value: '0', label: '关闭' },
+          { value: '1', label: '开启' }
         ]
       });
     } catch(e) {}
