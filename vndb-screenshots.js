@@ -142,7 +142,7 @@
       '#vndb-lb-next { top: 50%; right: 16px; transform: translateY(-50%); }',
       '#vndb-lb-counter { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); color: #ccc; font-size: 13px; z-index: 2; white-space: nowrap; }',
       '#dlsite-grid { display: none; grid-template-columns: repeat(4, 1fr); gap: 6px; }',
-      '.vndb-tab { cursor: pointer; border: 1px solid currentColor; border-radius: 3px; padding: 0 4px; }',
+      '.vndb-tab { cursor: pointer; border: 1px solid #eee; border-radius: 20px; padding: 2px 6px; }',
       '.vndb-tab:not(.vndb-tab-active):hover { text-decoration: none; color: #aaa; }',
       '.vndb-tab-active { cursor: default; color: #666; }',
       '#vndb-screenshot-gallery.dlsite-active #vndb-grid { display: none; }',
