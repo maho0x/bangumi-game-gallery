@@ -187,8 +187,8 @@
       '#vndb-screenshot-gallery.dlsite-active #vndb-grid { display: none; }',
       '#vndb-screenshot-gallery.dlsite-active #dlsite-grid { display: flex; }',
       '#vndb-screenshot-gallery.dlsite-active:not(.dlsite-r18) .vndb-switch { display: none; }',
-      '@keyframes vndb-thumb-in { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: none; } }',
-      '#dlsite-grid .vndb-thumb { animation: vndb-thumb-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }'
+      '@keyframes vndb-thumb-in { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }',
+      '#vndb-screenshot-gallery .vndb-thumb { animation: vndb-thumb-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }'
     ].join('\n');
     document.head.appendChild(style);
   }
