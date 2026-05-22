@@ -112,14 +112,6 @@
     grid.innerHTML = '<p class="vndb-status">正在加载截图…</p>';
   }
 
-  function showError(grid, vndbUrl) {
-    grid.innerHTML = '<p class="vndb-status vndb-error">截图加载失败，<a href="' + vndbUrl + '" target="_blank" rel="noopener noreferrer">在 VNDB 查看</a></p>';
-  }
-
-  function showEmpty(grid) {
-    grid.innerHTML = '<p class="vndb-status">VNDB 暂无截图</p>';
-  }
-
   function isNsfw(screenshot) {
     return screenshot.sexual >= 2 || screenshot.violence >= 2;
   }
