@@ -429,6 +429,20 @@
       gallery.classList.add('dlsite-r18');
     }
 
+    if (vndbId && dlsiteId) {
+      var dlsiteTagEl = document.getElementById('dlsite-source-tag');
+      var vndbTagEl   = document.getElementById('vndb-source-tag');
+      dlsiteTagEl.style.display = '';
+      var earlyDefault = cloudGet('defaultSource') || 'dlsite';
+      if (earlyDefault === 'dlsite') {
+        dlsiteTagEl.className = 'grey vndb-tab vndb-tab-active';
+        vndbTagEl.className   = 'grey vndb-tab';
+      } else {
+        vndbTagEl.className   = 'grey vndb-tab vndb-tab-active';
+        dlsiteTagEl.className = 'grey vndb-tab';
+      }
+    }
+
     var vndbResult   = null;
     var dlsiteImages = null;
     var lbInstance   = null;
@@ -463,8 +477,12 @@
           lbInstance.openWith(dlsiteImages, parseInt(thumb.dataset.idx, 10));
         });
       } else {
-        /* hasVndb && !hasDlsite: remove pre-applied dlsite-active so switch is visible */
+        /* hasVndb && !hasDlsite */
         gallery.classList.remove('dlsite-active');
+        if (dlsiteId) {
+          document.getElementById('dlsite-source-tag').style.display = 'none';
+          document.getElementById('dlsite-grid').innerHTML = '';
+        }
       }
     }
 
@@ -488,6 +506,7 @@
     }
 
     if (dlsiteId) {
+      showLoading(document.getElementById('dlsite-grid'));
       probeDlsiteImages(dlsiteId, function (images) {
         dlsiteImages = images;
         onBothDone();

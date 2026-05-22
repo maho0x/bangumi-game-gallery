@@ -505,6 +505,23 @@ describe('loading coordination', () => {
     expect(document.getElementById('vndb-screenshot-gallery')).toBeNull();
   });
 
+  test('DLsite tab and loading placeholder visible immediately when both IDs present', async () => {
+    document.documentElement.innerHTML = DOM_WITH_BOTH;
+    mockFetch([SFW_SHOT]);
+    let probeResolve;
+    global.Image = function () {
+      const self = this;
+      Object.defineProperty(self, 'src', {
+        set() { probeResolve = function() { self.onerror && self.onerror(); }; }
+      });
+    };
+    loadComponent();
+    /* Before probe completes: DLsite tab visible and loading placeholder in dlsite-grid */
+    expect(document.getElementById('dlsite-source-tag').style.display).not.toBe('none');
+    expect(document.querySelector('#dlsite-grid .vndb-status')).not.toBeNull();
+    global.Image = OriginalImage;
+  });
+
   test('DLsite shown when VNDB empty but DLsite has images', async () => {
     document.documentElement.innerHTML = DOM_WITH_BOTH;
     mockFetch([]);
