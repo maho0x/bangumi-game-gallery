@@ -183,6 +183,23 @@
     });
   }
 
+  function renderDlsiteGrid(images) {
+    var grid = document.getElementById('dlsite-grid');
+    grid.innerHTML = '';
+    images.forEach(function (image, i) {
+      var thumb = document.createElement('div');
+      thumb.className = 'vndb-thumb';
+      thumb.dataset.idx = String(i);
+
+      var img = document.createElement('img');
+      img.src = image.url;
+      img.loading = 'lazy';
+      thumb.appendChild(img);
+
+      grid.appendChild(thumb);
+    });
+  }
+
   function initNsfwToggle() {
     var grid = document.getElementById('vndb-grid');
     var btn  = document.getElementById('vndb-nsfw-toggle');
@@ -296,6 +313,39 @@
         count++;
       }
       open(visibleIdx);
+    });
+  }
+
+  function configureSingleSource(source) {
+    var gallery = document.getElementById('vndb-screenshot-gallery');
+    var vndbTag = document.getElementById('vndb-source-tag');
+    var dlsiteTag = document.getElementById('dlsite-source-tag');
+    if (source === 'dlsite') {
+      gallery.classList.add('dlsite-active');
+      vndbTag.style.display = 'none';
+      dlsiteTag.style.display = '';
+    }
+  }
+
+  function initTabs() {
+    var gallery = document.getElementById('vndb-screenshot-gallery');
+    var vndbTag = document.getElementById('vndb-source-tag');
+    var dlsiteTag = document.getElementById('dlsite-source-tag');
+
+    dlsiteTag.style.display = '';
+    vndbTag.className = 'vndb-tab vndb-tab-active';
+    dlsiteTag.className = 'vndb-tab';
+
+    vndbTag.addEventListener('click', function () {
+      gallery.classList.remove('dlsite-active');
+      vndbTag.classList.add('vndb-tab-active');
+      dlsiteTag.classList.remove('vndb-tab-active');
+    });
+
+    dlsiteTag.addEventListener('click', function () {
+      gallery.classList.add('dlsite-active');
+      dlsiteTag.classList.add('vndb-tab-active');
+      vndbTag.classList.remove('vndb-tab-active');
     });
   }
 
