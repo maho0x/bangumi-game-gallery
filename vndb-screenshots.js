@@ -406,6 +406,9 @@
     injectStyles();
     var gallery = createGalleryShell();
     columnInHomeB.parentNode.insertBefore(gallery, columnInHomeB.nextSibling);
+    if ((cloudGet('defaultSource') || 'dlsite') === 'dlsite') {
+      gallery.classList.add('dlsite-active');
+    }
 
     var vndbResult   = null;
     var dlsiteImages = null;
@@ -439,8 +442,10 @@
           if (!thumb) return;
           lbInstance.openWith(dlsiteImages, parseInt(thumb.dataset.idx, 10));
         });
+      } else {
+        /* hasVndb && !hasDlsite: remove pre-applied dlsite-active so switch is visible */
+        gallery.classList.remove('dlsite-active');
       }
-      /* hasVndb && !hasDlsite: already rendered during VNDB resolution, no change needed */
     }
 
     if (vndbId) {
