@@ -132,7 +132,7 @@ describe('page guard', () => {
     expect(document.getElementById('vndb-screenshot-gallery')).toBeNull();
   });
 
-  test('does nothing when no VNDB link in #infobox', () => {
+  test('does nothing when no VNDB or DLsite link in #infobox', () => {
     document.documentElement.innerHTML = DOM_NO_VNDB;
     loadComponent();
     expect(document.getElementById('vndb-screenshot-gallery')).toBeNull();
