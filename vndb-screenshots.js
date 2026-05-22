@@ -143,8 +143,8 @@
       '#vndb-lb-counter { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); color: #ccc; font-size: 13px; z-index: 2; white-space: nowrap; }',
       '#dlsite-grid { display: none; grid-template-columns: repeat(4, 1fr); gap: 6px; }',
       '.vndb-tab { cursor: pointer; }',
-      '.vndb-tab:not(.vndb-tab-active):hover { text-decoration: underline; }',
-      '.vndb-tab-active { cursor: default; color: #555; }',
+      '.vndb-tab:not(.vndb-tab-active):hover { text-decoration: underline; color: #aaa; }',
+      '.vndb-tab-active { cursor: default; color: #666; }',
       '#vndb-screenshot-gallery.dlsite-active #vndb-grid { display: none; }',
       '#vndb-screenshot-gallery.dlsite-active #dlsite-grid { display: grid; }',
       '#vndb-screenshot-gallery.dlsite-active #vndb-nsfw-toggle { display: none; }'
@@ -333,8 +333,8 @@
     var dlsiteTag = document.getElementById('dlsite-source-tag');
 
     dlsiteTag.style.display = '';
-    vndbTag.className = 'vndb-tab vndb-tab-active';
-    dlsiteTag.className = 'vndb-tab';
+    vndbTag.className = 'grey vndb-tab vndb-tab-active';
+    dlsiteTag.className = 'grey vndb-tab';
 
     vndbTag.addEventListener('click', function () {
       gallery.classList.remove('dlsite-active');
