@@ -90,18 +90,18 @@
     heading.className = 'subtitle';
     heading.appendChild(document.createTextNode('游戏画廊 '));
 
-    var vndbTag = document.createElement('small');
-    vndbTag.id = 'vndb-source-tag';
-    vndbTag.className = 'grey';
-    vndbTag.textContent = 'VNDB';
-    heading.appendChild(vndbTag);
-
     var dlsiteTag = document.createElement('small');
     dlsiteTag.id = 'dlsite-source-tag';
     dlsiteTag.className = 'grey';
     dlsiteTag.style.display = 'none';
     dlsiteTag.textContent = 'DLsite';
     heading.appendChild(dlsiteTag);
+
+    var vndbTag = document.createElement('small');
+    vndbTag.id = 'vndb-source-tag';
+    vndbTag.className = 'grey';
+    vndbTag.textContent = 'VNDB';
+    heading.appendChild(vndbTag);
 
     var switchEl = document.createElement('label');
     switchEl.className = 'vndb-switch';
@@ -359,14 +359,20 @@
     }
   }
 
-  function initTabs() {
+  function initTabs(initialSource) {
     var gallery = document.getElementById('vndb-screenshot-gallery');
     var vndbTag = document.getElementById('vndb-source-tag');
     var dlsiteTag = document.getElementById('dlsite-source-tag');
 
     dlsiteTag.style.display = '';
-    vndbTag.className = 'grey vndb-tab vndb-tab-active';
-    dlsiteTag.className = 'grey vndb-tab';
+    if (initialSource === 'dlsite') {
+      gallery.classList.add('dlsite-active');
+      vndbTag.className = 'grey vndb-tab';
+      dlsiteTag.className = 'grey vndb-tab vndb-tab-active';
+    } else {
+      vndbTag.className = 'grey vndb-tab vndb-tab-active';
+      dlsiteTag.className = 'grey vndb-tab';
+    }
 
     vndbTag.addEventListener('click', function () {
       gallery.classList.remove('dlsite-active');
@@ -418,10 +424,7 @@
 
       if (hasVndb && hasDlsite) {
         renderDlsiteGrid(dlsiteImages);
-        initTabs();
-        if ((cloudGet('defaultSource') || 'vndb') === 'dlsite') {
-          document.getElementById('dlsite-source-tag').click();
-        }
+        initTabs(cloudGet('defaultSource') || 'dlsite');
         document.getElementById('dlsite-grid').addEventListener('click', function (e) {
           var thumb = e.target.closest('.vndb-thumb');
           if (!thumb) return;
@@ -476,8 +479,8 @@
         title: '游戏画廊默认来源',
         name: 'galleryDefaultSource',
         type: 'radio',
-        defaultValue: 'vndb',
-        getCurrentValue: function() { return cloudGet('defaultSource') || 'vndb'; },
+        defaultValue: 'dlsite',
+        getCurrentValue: function() { return cloudGet('defaultSource') || 'dlsite'; },
         onChange: function(value) { cloudSet('defaultSource', value); },
         options: [
           { value: 'vndb', label: 'VNDB' },

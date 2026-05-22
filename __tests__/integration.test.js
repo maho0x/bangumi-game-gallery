@@ -563,10 +563,10 @@ describe('tab switching', () => {
     await flushPromises();
   }
 
-  test('VNDB tab active by default', async () => {
+  test('DLsite tab active by default', async () => {
     await setupBoth();
-    expect(document.getElementById('vndb-source-tag').classList.contains('vndb-tab-active')).toBe(true);
-    expect(document.getElementById('dlsite-source-tag').classList.contains('vndb-tab-active')).toBe(false);
+    expect(document.getElementById('dlsite-source-tag').classList.contains('vndb-tab-active')).toBe(true);
+    expect(document.getElementById('vndb-source-tag').classList.contains('vndb-tab-active')).toBe(false);
   });
 
   test('clicking DLsite tab adds dlsite-active to gallery', async () => {
