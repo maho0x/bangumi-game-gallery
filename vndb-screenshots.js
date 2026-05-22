@@ -75,7 +75,20 @@
 
     var heading = document.createElement('h2');
     heading.className = 'subtitle';
-    heading.innerHTML = '游戏截图 <small class="grey">via VNDB</small>';
+    heading.appendChild(document.createTextNode('游戏画廊 '));
+
+    var vndbTag = document.createElement('small');
+    vndbTag.id = 'vndb-source-tag';
+    vndbTag.className = 'grey';
+    vndbTag.textContent = 'via VNDB';
+    heading.appendChild(vndbTag);
+
+    var dlsiteTag = document.createElement('small');
+    dlsiteTag.id = 'dlsite-source-tag';
+    dlsiteTag.className = 'grey';
+    dlsiteTag.style.display = 'none';
+    dlsiteTag.textContent = 'via DLsite';
+    heading.appendChild(dlsiteTag);
 
     var toggle = document.createElement('button');
     toggle.id = 'vndb-nsfw-toggle';
@@ -86,8 +99,12 @@
     var grid = document.createElement('div');
     grid.id = 'vndb-grid';
 
+    var dlsiteGrid = document.createElement('div');
+    dlsiteGrid.id = 'dlsite-grid';
+
     gallery.appendChild(heading);
     gallery.appendChild(grid);
+    gallery.appendChild(dlsiteGrid);
     return gallery;
   }
 
@@ -132,7 +149,13 @@
       '#vndb-lb-close { top: 16px; right: 16px; }',
       '#vndb-lb-prev { top: 50%; left: 16px; transform: translateY(-50%); }',
       '#vndb-lb-next { top: 50%; right: 16px; transform: translateY(-50%); }',
-      '#vndb-lb-counter { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); color: #ccc; font-size: 13px; z-index: 2; white-space: nowrap; }'
+      '#vndb-lb-counter { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); color: #ccc; font-size: 13px; z-index: 2; white-space: nowrap; }',
+      '#dlsite-grid { display: none; grid-template-columns: repeat(4, 1fr); gap: 6px; }',
+      '.vndb-tab { cursor: pointer; text-decoration: underline; }',
+      '.vndb-tab-active { font-weight: bold; text-decoration: none; cursor: default; }',
+      '#vndb-screenshot-gallery.dlsite-active #vndb-grid { display: none; }',
+      '#vndb-screenshot-gallery.dlsite-active #dlsite-grid { display: grid; }',
+      '#vndb-screenshot-gallery.dlsite-active #vndb-nsfw-toggle { display: none; }'
     ].join('\n');
     document.head.appendChild(style);
   }
