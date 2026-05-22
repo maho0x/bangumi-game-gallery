@@ -94,6 +94,7 @@
     switchEl.className = 'vndb-switch';
     switchEl.innerHTML =
       '<input type="checkbox" id="vndb-nsfw-toggle">' +
+      '<span class="vndb-switch-label">R18</span>' +
       '<div class="vndb-slider">' +
         '<div class="vndb-circle">' +
           '<svg class="vndb-checkmark" viewBox="0 0 10 7" fill="none"><path d="M1 3.5L3.5 6L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
@@ -129,7 +130,8 @@
     style.textContent = [
       '#vndb-screenshot-gallery { margin-top: 16px; }',
       '#vndb-screenshot-gallery .subtitle { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }',
-      '.vndb-switch { --sw-w:46px; --sw-h:24px; --sw-bg:rgb(131,131,131); --sw-on:var(--primary-color); --sw-d:18px; --sw-off:calc((var(--sw-h) - var(--sw-d)) / 2); --sw-t:all .2s cubic-bezier(0.27,.2,.25,1.51); --sw-sh:1px 1px 2px rgba(146,146,146,.45); --sw-sh2:-1px 1px 2px rgba(163,163,163,.45); --sw-ew:calc(var(--sw-d) / 2); --sw-eh:calc(var(--sw-ew) / 2 - 1px); display:inline-block; margin-left:auto; cursor:pointer; }',
+      '.vndb-switch { --sw-w:46px; --sw-h:24px; --sw-bg:rgb(131,131,131); --sw-on:var(--primary-color); --sw-d:18px; --sw-off:calc((var(--sw-h) - var(--sw-d)) / 2); --sw-t:all .2s cubic-bezier(0.27,.2,.25,1.51); --sw-sh:1px 1px 2px rgba(146,146,146,.45); --sw-sh2:-1px 1px 2px rgba(163,163,163,.45); --sw-ew:calc(var(--sw-d) / 2); --sw-eh:calc(var(--sw-ew) / 2 - 1px); display:inline-flex; align-items:center; gap:6px; margin-left:auto; cursor:pointer; user-select:none; -webkit-user-select:none; }',
+      '.vndb-switch-label { font-size:12px; color:#999; }',
       '.vndb-switch input { display:none; }',
       '.vndb-switch svg { transition:var(--sw-t); position:absolute; height:auto; }',
       '.vndb-switch .vndb-checkmark { width:10px; color:var(--primary-color); transform:scale(0); }',
