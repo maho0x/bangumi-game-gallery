@@ -23,6 +23,35 @@
     return 'https://img.dlsite.jp/modpub/images2/work/' + category + '/' + folder + '/' + id + suffix;
   }
 
+  function probeDlsiteImages(id, onDone) {
+    var images = [];
+
+    function makeImg(suffix, onSuccess, onFail) {
+      var img = new Image();
+      img.onload = onSuccess;
+      img.onerror = onFail;
+      img.src = buildDlsiteImageUrl(id, suffix);
+    }
+
+    function probeNext(n) {
+      if (n > 20) { onDone(images); return; }
+      var suffix = '_img_smp' + n + '.webp';
+      makeImg(suffix, function () {
+        images.push({ url: buildDlsiteImageUrl(id, suffix) });
+        probeNext(n + 1);
+      }, function () {
+        onDone(images);
+      });
+    }
+
+    makeImg('_img_main.webp', function () {
+      images.push({ url: buildDlsiteImageUrl(id, '_img_main.webp') });
+      probeNext(1);
+    }, function () {
+      onDone([]);
+    });
+  }
+
   function fetchScreenshots(vndbId) {
     return fetch('https://api.vndb.org/kana/vn', {
       method: 'POST',
