@@ -1,7 +1,7 @@
 const fs   = require('fs');
 const path = require('path');
 
-const COMPONENT = path.resolve(__dirname, '..', 'vndb-screenshots.js');
+const COMPONENT = path.resolve(__dirname, '..', 'bangumi-game-gallery.js');
 
 const DOM_WITH_VNDB = `<head></head><body>
   <ul id="infobox">
