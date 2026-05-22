@@ -247,29 +247,37 @@
     document.body.appendChild(lb);
 
     var currentIdx = 0;
-    var visibleList = [];
     var lbOpen = false;
+    var getImages = function () { return getVisibleScreenshots(screenshots); };
 
-    function showImage(screenshot) {
-      var img      = document.getElementById('vndb-lb-img');
-      var loading  = document.getElementById('vndb-lb-loading');
-      var counter  = document.getElementById('vndb-lb-counter');
+    function showImage(image) {
+      var img     = document.getElementById('vndb-lb-img');
+      var loading = document.getElementById('vndb-lb-loading');
+      var counter = document.getElementById('vndb-lb-counter');
       img.style.display = 'none';
       loading.style.display = 'block';
-      counter.textContent = (currentIdx + 1) + ' / ' + visibleList.length;
+      counter.textContent = (currentIdx + 1) + ' / ' + getImages().length;
       img.onload = function () {
         loading.style.display = 'none';
         img.style.display = 'block';
       };
-      img.src = screenshot.url;
+      img.src = image.url;
+    }
+
+    function openWith(images, idx) {
+      getImages = function () { return images; };
+      currentIdx = idx;
+      lbOpen = true;
+      lb.style.display = 'flex';
+      showImage(images[idx]);
     }
 
     function open(visibleIdx) {
-      visibleList = getVisibleScreenshots(screenshots);
-      currentIdx  = visibleIdx;
-      lbOpen      = true;
+      getImages = function () { return getVisibleScreenshots(screenshots); };
+      currentIdx = visibleIdx;
+      lbOpen = true;
       lb.style.display = 'flex';
-      showImage(visibleList[currentIdx]);
+      showImage(getImages()[currentIdx]);
     }
 
     function close() {
@@ -278,10 +286,10 @@
     }
 
     function navigate(delta) {
-      visibleList = getVisibleScreenshots(screenshots);
-      if (!visibleList.length) return;
-      currentIdx = (currentIdx + delta + visibleList.length) % visibleList.length;
-      showImage(visibleList[currentIdx]);
+      var imgs = getImages();
+      if (!imgs.length) return;
+      currentIdx = (currentIdx + delta + imgs.length) % imgs.length;
+      showImage(imgs[currentIdx]);
     }
 
     document.getElementById('vndb-lb-backdrop').addEventListener('click', close);
@@ -299,11 +307,9 @@
     document.getElementById('vndb-grid').addEventListener('click', function (e) {
       var thumb = e.target.closest('.vndb-thumb');
       if (!thumb) return;
-
       var isNsfwThumb = thumb.classList.contains('vndb-nsfw');
       var showNsfw    = localStorage.getItem('vndb_show_nsfw') === '1';
       if (isNsfwThumb && !showNsfw) return;
-
       var rawIdx = parseInt(thumb.dataset.idx, 10);
       var visibleIdx = 0;
       var count = 0;
@@ -314,6 +320,8 @@
       }
       open(visibleIdx);
     });
+
+    return { openWith: openWith };
   }
 
   function configureSingleSource(source) {
