@@ -9,6 +9,20 @@
     return m ? m[1] : null;
   }
 
+  function extractDlsiteId(href) {
+    var m = (href || '').match(/product_id\/((?:RJ|VJ)\d+)/);
+    return m ? m[1] : null;
+  }
+
+  function buildDlsiteImageUrl(id, suffix) {
+    var prefix = id.slice(0, 2);
+    var numId = parseInt(id.slice(2), 10);
+    var folderNum = Math.ceil(numId / 1000) * 1000;
+    var folder = prefix + ('000000' + folderNum).slice(-6);
+    var category = prefix === 'RJ' ? 'doujin' : 'professional';
+    return 'https://img.dlsite.jp/modpub/images2/work/' + category + '/' + folder + '/' + id + suffix;
+  }
+
   function fetchScreenshots(vndbId) {
     return fetch('https://api.vndb.org/kana/vn', {
       method: 'POST',
