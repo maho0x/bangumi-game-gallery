@@ -360,37 +360,87 @@
   function init() {
     if (!/^\/subject\/\d+$/.test(location.pathname)) return;
 
-    var vndbAnchor = document.querySelector('#infobox a[href*="vndb.org/v"]');
-    if (!vndbAnchor) return;
-
-    var vndbId = extractVndbId(vndbAnchor.href);
-    if (!vndbId) return;
-
     var subjectDetail = document.getElementById('subject_detail');
     if (!subjectDetail) return;
+
+    var vndbAnchor   = document.querySelector('#infobox a[href*="vndb.org/v"]');
+    var dlsiteAnchor = document.querySelector('#infobox a[href*="dlsite.com"]');
+
+    var vndbId   = vndbAnchor   ? extractVndbId(vndbAnchor.href)     : null;
+    var dlsiteId = dlsiteAnchor ? extractDlsiteId(dlsiteAnchor.href) : null;
+
+    if (!vndbId && !dlsiteId) return;
 
     var columnInHomeB = document.getElementById('columnSubjectInHomeB') || subjectDetail.parentNode;
 
     injectStyles();
-
     var gallery = createGalleryShell();
     columnInHomeB.parentNode.insertBefore(gallery, columnInHomeB.nextSibling);
 
-    var grid = document.getElementById('vndb-grid');
-    showLoading(grid);
+    var vndbResult   = null;
+    var dlsiteImages = null;
+    var lbInstance   = null;
 
-    fetchScreenshots(vndbId).then(function (screenshots) {
-      if (!screenshots.length) {
-        showEmpty(grid);
-        initNsfwToggle();
+    function onBothDone() {
+      if (vndbResult === null || dlsiteImages === null) return;
+
+      var hasVndb   = Array.isArray(vndbResult) && vndbResult.length > 0;
+      var hasDlsite = dlsiteImages.length > 0;
+
+      if (!hasVndb && !hasDlsite) {
+        gallery.parentNode.removeChild(gallery);
         return;
       }
-      renderScreenshots(screenshots);
-      initNsfwToggle();
-      initLightbox(screenshots);
-    }).catch(function () {
-      showError(grid, vndbAnchor.href);
-    });
+
+      if (hasVndb && hasDlsite) {
+        renderDlsiteGrid(dlsiteImages);
+        initTabs();
+        document.getElementById('dlsite-grid').addEventListener('click', function (e) {
+          var thumb = e.target.closest('.vndb-thumb');
+          if (!thumb) return;
+          lbInstance.openWith(dlsiteImages, parseInt(thumb.dataset.idx, 10));
+        });
+      } else if (hasDlsite) {
+        renderDlsiteGrid(dlsiteImages);
+        configureSingleSource('dlsite');
+        lbInstance = initLightbox([]);
+        document.getElementById('dlsite-grid').addEventListener('click', function (e) {
+          var thumb = e.target.closest('.vndb-thumb');
+          if (!thumb) return;
+          lbInstance.openWith(dlsiteImages, parseInt(thumb.dataset.idx, 10));
+        });
+      }
+      /* hasVndb && !hasDlsite: already rendered during VNDB resolution, no change needed */
+    }
+
+    if (vndbId) {
+      var grid = document.getElementById('vndb-grid');
+      showLoading(grid);
+      fetchScreenshots(vndbId).then(function (screenshots) {
+        vndbResult = screenshots;
+        if (screenshots.length) {
+          renderScreenshots(screenshots);
+          initNsfwToggle();
+          lbInstance = initLightbox(screenshots);
+        }
+      }).catch(function () {
+        vndbResult = [];
+      }).then(function () {
+        onBothDone();
+      });
+    } else {
+      vndbResult = [];
+    }
+
+    if (dlsiteId) {
+      probeDlsiteImages(dlsiteId, function (images) {
+        dlsiteImages = images;
+        onBothDone();
+      });
+    } else {
+      dlsiteImages = [];
+      onBothDone();
+    }
   }
 
   init();

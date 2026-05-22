@@ -177,21 +177,20 @@ describe('status states', () => {
     expect(document.querySelector('.vndb-status').textContent).toContain('正在加载');
   });
 
-  test('shows empty message when API returns zero screenshots', async () => {
+  test('removes gallery when VNDB returns empty and no DLsite', async () => {
     document.documentElement.innerHTML = DOM_WITH_VNDB;
     mockFetch([]);
     loadComponent();
     await flushPromises();
-    expect(document.querySelector('.vndb-status').textContent).toContain('暂无截图');
+    expect(document.getElementById('vndb-screenshot-gallery')).toBeNull();
   });
 
-  test('shows error message when API returns non-ok status', async () => {
+  test('removes gallery when VNDB errors and no DLsite', async () => {
     document.documentElement.innerHTML = DOM_WITH_VNDB;
     mockFetchError();
     loadComponent();
     await flushPromises();
-    expect(document.querySelector('.vndb-error')).not.toBeNull();
-    expect(document.querySelector('.vndb-error a').href).toContain('vndb.org/v26307');
+    expect(document.getElementById('vndb-screenshot-gallery')).toBeNull();
   });
 });
 
@@ -391,5 +390,255 @@ describe('lightbox', () => {
     clickThumb(0);
     document.getElementById('vndb-lb-next').click();
     expect(document.getElementById('vndb-lb-counter').textContent).toBe('1 / 1');
+  });
+});
+
+describe('DLsite URL construction', () => {
+  test('probes correct main URL for RJ id', () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockFetch([]);
+    mockImageProbe(['error']);
+    loadComponent();
+    expect(mockImageProbe.urls[0]).toBe(
+      'https://img.dlsite.jp/modpub/images2/work/doujin/RJ306000/RJ305720_img_main.webp'
+    );
+  });
+
+  test('probes correct main URL for VJ id', () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY.replace(DLSITE_RJ_URL, DLSITE_VJ_URL);
+    mockFetch([]);
+    mockImageProbe(['error']);
+    loadComponent();
+    expect(mockImageProbe.urls[0]).toBe(
+      'https://img.dlsite.jp/modpub/images2/work/professional/VJ011000/VJ010793_img_main.webp'
+    );
+  });
+
+  test('does not probe when DLsite prefix is unsupported', () => {
+    const bjUrl = 'https://www.dlsite.com/books/work/=/product_id/BJ123456.html';
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY.replace(DLSITE_RJ_URL, bjUrl);
+    mockFetch([]);
+    mockImageProbe(['load']);
+    loadComponent();
+    expect(mockImageProbe.urls.length).toBe(0);
+  });
+});
+
+describe('DLsite probing behaviour', () => {
+  test('stops after main image fails', () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockFetch([]);
+    mockImageProbe(['error']);
+    loadComponent();
+    expect(mockImageProbe.urls.length).toBe(1);
+  });
+
+  test('probes smp1 URL after main succeeds', () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockFetch([]);
+    mockImageProbe(['load', 'error']);
+    loadComponent();
+    expect(mockImageProbe.urls[1]).toBe(
+      'https://img.dlsite.jp/modpub/images2/work/doujin/RJ306000/RJ305720_img_smp1.webp'
+    );
+  });
+
+  test('stops after first failed smp', () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockFetch([]);
+    mockImageProbe(['load', 'load', 'error']);
+    loadComponent();
+    expect(mockImageProbe.urls.length).toBe(3);
+  });
+
+  test('stops at smp20 even if all succeed', () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockFetch([]);
+    mockImageProbe(Array(22).fill('load'));
+    loadComponent();
+    expect(mockImageProbe.urls.length).toBe(21); /* main + smp1..smp20 */
+  });
+});
+
+describe('DLsite grid rendering', () => {
+  async function setupDlsiteOnly(outcomes) {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockFetch([]);
+    mockImageProbe(outcomes || ['load', 'load', 'error']);
+    loadComponent();
+    await flushPromises();
+  }
+
+  test('renders one thumb per probed image', async () => {
+    await setupDlsiteOnly(['load', 'load', 'error']);
+    expect(document.querySelectorAll('#dlsite-grid .vndb-thumb').length).toBe(2);
+  });
+
+  test('thumb src matches probed URL', async () => {
+    await setupDlsiteOnly(['load', 'error']);
+    const img = document.querySelector('#dlsite-grid .vndb-thumb img');
+    expect(img.src).toBe(
+      'https://img.dlsite.jp/modpub/images2/work/doujin/RJ306000/RJ305720_img_main.webp'
+    );
+  });
+
+  test('DLsite thumbs have no vndb-mask', async () => {
+    await setupDlsiteOnly(['load', 'error']);
+    expect(document.querySelector('#dlsite-grid .vndb-mask')).toBeNull();
+  });
+
+  test('thumbs have correct data-idx', async () => {
+    await setupDlsiteOnly(['load', 'load', 'error']);
+    const thumbs = document.querySelectorAll('#dlsite-grid .vndb-thumb');
+    expect(thumbs[0].dataset.idx).toBe('0');
+    expect(thumbs[1].dataset.idx).toBe('1');
+  });
+});
+
+describe('loading coordination', () => {
+  test('gallery removed when both VNDB and DLsite have no data', async () => {
+    document.documentElement.innerHTML = DOM_WITH_BOTH;
+    mockFetch([]);
+    mockImageProbe(['error']);
+    loadComponent();
+    await flushPromises();
+    expect(document.getElementById('vndb-screenshot-gallery')).toBeNull();
+  });
+
+  test('DLsite shown when VNDB empty but DLsite has images', async () => {
+    document.documentElement.innerHTML = DOM_WITH_BOTH;
+    mockFetch([]);
+    mockImageProbe(['load', 'error']);
+    loadComponent();
+    await flushPromises();
+    expect(document.getElementById('vndb-screenshot-gallery')).not.toBeNull();
+    expect(document.querySelectorAll('#dlsite-grid .vndb-thumb').length).toBe(1);
+    expect(document.getElementById('vndb-screenshot-gallery').classList.contains('dlsite-active')).toBe(true);
+  });
+
+  test('VNDB shown when DLsite probe fails, no tab', async () => {
+    document.documentElement.innerHTML = DOM_WITH_BOTH;
+    mockFetch([SFW_SHOT]);
+    mockImageProbe(['error']);
+    loadComponent();
+    await flushPromises();
+    expect(document.querySelectorAll('#vndb-grid .vndb-thumb').length).toBe(1);
+    expect(document.getElementById('dlsite-source-tag').style.display).toBe('none');
+  });
+
+  test('both sources: tabs appear when both have data', async () => {
+    document.documentElement.innerHTML = DOM_WITH_BOTH;
+    mockFetch([SFW_SHOT]);
+    mockImageProbe(['load', 'error']);
+    loadComponent();
+    await flushPromises();
+    expect(document.getElementById('vndb-source-tag').classList.contains('vndb-tab')).toBe(true);
+    expect(document.getElementById('dlsite-source-tag').classList.contains('vndb-tab')).toBe(true);
+  });
+
+  test('gallery inserted when only DLsite present', () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockFetch([]);
+    mockImageProbe(['load', 'error']);
+    loadComponent();
+    expect(document.getElementById('vndb-screenshot-gallery')).not.toBeNull();
+  });
+
+  test('gallery position after #columnSubjectInHomeB for DLsite-only', () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockFetch([]);
+    mockImageProbe(['load', 'error']);
+    loadComponent();
+    const col = document.getElementById('columnSubjectInHomeB');
+    expect(col.nextSibling).toBe(document.getElementById('vndb-screenshot-gallery'));
+  });
+});
+
+describe('tab switching', () => {
+  async function setupBoth() {
+    document.documentElement.innerHTML = DOM_WITH_BOTH;
+    mockFetch([SFW_SHOT]);
+    mockImageProbe(['load', 'load', 'error']);
+    loadComponent();
+    await flushPromises();
+  }
+
+  test('VNDB tab active by default', async () => {
+    await setupBoth();
+    expect(document.getElementById('vndb-source-tag').classList.contains('vndb-tab-active')).toBe(true);
+    expect(document.getElementById('dlsite-source-tag').classList.contains('vndb-tab-active')).toBe(false);
+  });
+
+  test('clicking DLsite tab adds dlsite-active to gallery', async () => {
+    await setupBoth();
+    document.getElementById('dlsite-source-tag').click();
+    expect(document.getElementById('vndb-screenshot-gallery').classList.contains('dlsite-active')).toBe(true);
+  });
+
+  test('clicking VNDB tab removes dlsite-active', async () => {
+    await setupBoth();
+    document.getElementById('dlsite-source-tag').click();
+    document.getElementById('vndb-source-tag').click();
+    expect(document.getElementById('vndb-screenshot-gallery').classList.contains('dlsite-active')).toBe(false);
+  });
+
+  test('DLsite-only: gallery has dlsite-active, vndb-source-tag hidden', async () => {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockFetch([]);
+    mockImageProbe(['load', 'error']);
+    loadComponent();
+    await flushPromises();
+    expect(document.getElementById('vndb-screenshot-gallery').classList.contains('dlsite-active')).toBe(true);
+    expect(document.getElementById('vndb-source-tag').style.display).toBe('none');
+  });
+});
+
+describe('DLsite lightbox', () => {
+  async function setupDlsiteOnly() {
+    document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
+    mockFetch([]);
+    mockImageProbe(['load', 'load', 'error']);
+    loadComponent();
+    await flushPromises();
+  }
+
+  test('clicking DLsite thumb opens lightbox', async () => {
+    await setupDlsiteOnly();
+    document.querySelector('#dlsite-grid .vndb-thumb').click();
+    expect(document.getElementById('vndb-lightbox').style.display).not.toBe('none');
+  });
+
+  test('lightbox shows correct DLsite image URL', async () => {
+    await setupDlsiteOnly();
+    document.querySelector('#dlsite-grid .vndb-thumb').click();
+    expect(document.getElementById('vndb-lb-img').src).toBe(
+      'https://img.dlsite.jp/modpub/images2/work/doujin/RJ306000/RJ305720_img_main.webp'
+    );
+  });
+
+  test('counter shows correct total', async () => {
+    await setupDlsiteOnly();
+    document.querySelector('#dlsite-grid .vndb-thumb').click();
+    expect(document.getElementById('vndb-lb-counter').textContent).toBe('1 / 2');
+  });
+
+  test('ArrowRight navigates to next DLsite image', async () => {
+    await setupDlsiteOnly();
+    document.querySelector('#dlsite-grid .vndb-thumb').click();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(document.getElementById('vndb-lb-img').src).toBe(
+      'https://img.dlsite.jp/modpub/images2/work/doujin/RJ306000/RJ305720_img_smp1.webp'
+    );
+    expect(document.getElementById('vndb-lb-counter').textContent).toBe('2 / 2');
+  });
+
+  test('VNDB lightbox still works when both sources present', async () => {
+    document.documentElement.innerHTML = DOM_WITH_BOTH;
+    mockFetch([SFW_SHOT]);
+    mockImageProbe(['load', 'error']);
+    loadComponent();
+    await flushPromises();
+    document.querySelector('#vndb-grid .vndb-thumb').click();
+    expect(document.getElementById('vndb-lb-img').src).toBe(SFW_SHOT.url);
   });
 });
