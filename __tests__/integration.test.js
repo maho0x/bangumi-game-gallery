@@ -690,6 +690,19 @@ describe('Getchu source', () => {
   });
 });
 
+describe('source priority', () => {
+  test('falls back in DLsite → Getchu → Steam → VNDB order and orders tags the same way', async () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB_AND_STEAM;
+    mockFetchSources([SFW_SHOT], [STEAM_SHOT]);
+    loadComponent();
+    await flushPromises();
+    const gallery = document.getElementById('vndb-screenshot-gallery');
+    expect(gallery.classList.contains('steam-active')).toBe(true);
+    const tagOrder = Array.from(gallery.querySelectorAll('.subtitle small')).map((el) => el.id);
+    expect(tagOrder).toEqual(['dlsite-source-tag', 'getchu-source-tag', 'steam-source-tag', 'vndb-source-tag']);
+  });
+});
+
 describe('source timeouts', () => {
   test('a hanging Steam request does not permanently block VNDB', async () => {
     jest.useFakeTimers();

@@ -330,9 +330,9 @@
       '<h2 class="subtitle">游戏画廊 ' +
         tagSkeletons +
         '<small id="dlsite-source-tag" class="grey"' + hidden + '>DLsite</small>' +
-        '<small id="vndb-source-tag" class="grey"' + hidden + '>VNDB</small>' +
-        '<small id="steam-source-tag" class="grey"' + hidden + '>Steam</small>' +
         '<small id="getchu-source-tag" class="grey"' + hidden + '>Getchu</small>' +
+        '<small id="steam-source-tag" class="grey"' + hidden + '>Steam</small>' +
+        '<small id="vndb-source-tag" class="grey"' + hidden + '>VNDB</small>' +
         '<label class="vndb-switch">' +
           '<input type="checkbox" id="vndb-nsfw-toggle">' +
           '<span class="vndb-switch-label">R18</span>' +
@@ -450,7 +450,7 @@
 
   function initTabs(initialSource, sources) {
     var gallery = $('vndb-screenshot-gallery');
-    var sourceNames = ['vndb', 'dlsite', 'steam', 'getchu'];
+    var sourceNames = ['dlsite', 'getchu', 'steam', 'vndb'];
     var activeSource = sources.indexOf(initialSource) >= 0 ? initialSource : sources[0];
 
     var tagSkeletons = gallery.querySelectorAll('.vndb-tag-skeleton');
@@ -507,10 +507,10 @@
       if (defaultSource === 'dlsite' && dlsiteId) return 'dlsite';
       if (defaultSource === 'steam' && steamAppId) return 'steam';
       if (defaultSource === 'getchu' && getchuId) return 'getchu';
-      if (vndbId) return 'vndb';
       if (dlsiteId) return 'dlsite';
+      if (getchuId) return 'getchu';
       if (steamAppId) return 'steam';
-      return 'getchu';
+      return 'vndb';
     }
 
     injectStyles();
@@ -555,10 +555,10 @@
       var hasSteam  = steamImages.length > 0;
       var hasGetchu = getchuImages.length > 0;
       var sources = [];
-      if (hasVndb) sources.push('vndb');
       if (hasDlsite) sources.push('dlsite');
-      if (hasSteam) sources.push('steam');
       if (hasGetchu) sources.push('getchu');
+      if (hasSteam) sources.push('steam');
+      if (hasVndb) sources.push('vndb');
 
       if (!sources.length) {
         collapseAndRemove(gallerySection);
@@ -683,10 +683,10 @@
             getCurrentValue: function() { return cloudGet('defaultSource') || 'dlsite'; },
             onChange: function(value) { cloudSet('defaultSource', value); },
             options: [
-              { value: 'vndb', label: 'VNDB' },
               { value: 'dlsite', label: 'DLsite' },
+              { value: 'getchu', label: 'Getchu' },
               { value: 'steam', label: 'Steam' },
-              { value: 'getchu', label: 'Getchu' }
+              { value: 'vndb', label: 'VNDB' }
             ]
           },
           {
