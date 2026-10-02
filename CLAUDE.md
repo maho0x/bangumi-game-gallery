@@ -25,7 +25,7 @@ The entire component lives in `bangumi-game-gallery.js`. It:
 6. **Fetches Getchu samples** through the same Worker (`/v1/getchu/items/{id}/samples`). Getchu blocks hotlinked images (403 unless the Referer is getchu.com), so thumbnails and full images are also served by the Worker, which checks the Bangumi Referer and caches them at the edge.
 7. **Coordinates all sources** in `onAllDone()` — waits for every applicable operation, then shows available tabs or removes the gallery when all sources are empty. VNDB, Steam, and Getchu settle after at most 10 seconds; DLsite uses a 4-second per-image timeout and a 10-second overall timeout so a hanging source cannot block the others indefinitely.
 8. **Injects styles** once via a `<style id="vndb-styles">` element.
-9. **Registers settings** via the Bangumi platform API `chiiLib.ukagaka.addPanelTab` (silently no-ops if the API is absent).
+9. **Registers settings** via the Bangumi platform API `chiiLib.ukagaka.addPanelTab` (silently no-ops if the API is absent). The tab is `type: 'custom'`: `customContent` renders a reorderable source list plus a radio section that copies the panel's native `.section`/`.option-item` markup, and `onInit` binds its events. Its styles live in a separate `<style id="bgg-settings-styles">` because the panel exists on every page.
 
 ## Bangumi Platform APIs
 
@@ -41,7 +41,7 @@ When both cloud and localStorage values exist, cloud takes precedence (see `getS
 | Setting | Cloud key | localStorage fallback |
 |---|---|---|
 | Show NSFW | `showNsfw` (`'1'`/`'0'`) | `vndb_show_nsfw` |
-| Default source | `defaultSource` (`'dlsite'`/`'vndb'`/`'steam'`/`'getchu'`) | — (default: `'dlsite'`) |
+| Source order | `sourceOrder` (comma list, e.g. `'dlsite,getchu,steam,vndb'`) | — (legacy `defaultSource` is moved to the front if `sourceOrder` is unset) |
 | DLsite/Getchu R18 blur | `dlsiteR18` (`'1'`/`'0'`) | — |
 
 ## Testing

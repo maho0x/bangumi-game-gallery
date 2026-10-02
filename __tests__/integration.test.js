@@ -580,15 +580,6 @@ describe('Steam source', () => {
     expect(document.getElementById('vndb-screenshot-gallery').classList.contains('steam-active')).toBe(true);
   });
 
-  test('offers Steam in the default-source settings', () => {
-    const addPanelTab = jest.fn();
-    global.chiiLib = { ukagaka: { addPanelTab } };
-    document.documentElement.innerHTML = DOM_NO_VNDB;
-    loadComponent();
-    const panel = addPanelTab.mock.calls[0][0];
-    const setting = panel.config.find((item) => item.name === 'galleryDefaultSource');
-    expect(setting.options).toContainEqual({ value: 'steam', label: 'Steam' });
-  });
 });
 
 describe('Getchu source', () => {
@@ -700,6 +691,101 @@ describe('source priority', () => {
     expect(gallery.classList.contains('steam-active')).toBe(true);
     const tagOrder = Array.from(gallery.querySelectorAll('.subtitle small')).map((el) => el.id);
     expect(tagOrder).toEqual(['dlsite-source-tag', 'getchu-source-tag', 'steam-source-tag', 'vndb-source-tag']);
+  });
+});
+
+describe('source order setting', () => {
+  let store;
+
+  function mockCloud(initial) {
+    store = Object.assign({}, initial);
+    global.chiiApp = {
+      cloud_settings: {
+        get: (key) => (store[key] !== undefined ? store[key] : null),
+        update: (obj) => Object.assign(store, obj),
+        save: jest.fn()
+      }
+    };
+  }
+
+  function openSettingsTab() {
+    const addPanelTab = jest.fn();
+    global.chiiLib = { ukagaka: { addPanelTab } };
+    loadComponent();
+    const panel = addPanelTab.mock.calls[0][0];
+    const tab = document.createElement('div');
+    tab.id = panel.tab + '-tab';
+    tab.innerHTML = panel.customContent();
+    document.body.appendChild(tab);
+    panel.onInit('#' + tab.id);
+    return tab;
+  }
+
+  const orderIn = (tab) =>
+    Array.from(tab.querySelectorAll('.bgg-order-item')).map((li) => li.dataset.source);
+
+  afterEach(() => {
+    delete global.chiiApp;
+    delete global.chiiLib;
+  });
+
+  test('settings tab lists sources in the default order with ends disabled', () => {
+    mockCloud({});
+    document.documentElement.innerHTML = DOM_NO_VNDB;
+    const tab = openSettingsTab();
+    expect(orderIn(tab)).toEqual(['dlsite', 'getchu', 'steam', 'vndb']);
+    const items = tab.querySelectorAll('.bgg-order-item');
+    expect(items[0].querySelector('[data-move="-1"]').disabled).toBe(true);
+    expect(items[3].querySelector('[data-move="1"]').disabled).toBe(true);
+  });
+
+  test('moving a source saves the new order and re-renders the list', () => {
+    mockCloud({});
+    document.documentElement.innerHTML = DOM_NO_VNDB;
+    const tab = openSettingsTab();
+    tab.querySelector('[data-source="vndb"] [data-move="-1"]').click();
+    expect(store.sourceOrder).toBe('dlsite,getchu,vndb,steam');
+    expect(orderIn(tab)).toEqual(['dlsite', 'getchu', 'vndb', 'steam']);
+    tab.querySelector('[data-source="dlsite"] [data-move="1"]').click();
+    expect(store.sourceOrder).toBe('getchu,dlsite,vndb,steam');
+  });
+
+  test('R18 blur radio reflects and saves dlsiteR18', () => {
+    mockCloud({ dlsiteR18: '1' });
+    document.documentElement.innerHTML = DOM_NO_VNDB;
+    const tab = openSettingsTab();
+    expect(tab.querySelector('#dlsiteR18_1').checked).toBe(true);
+    const off = tab.querySelector('#dlsiteR18_0');
+    off.checked = true;
+    off.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(store.dlsiteR18).toBe('0');
+  });
+
+  test('legacy defaultSource moves that source to the front', () => {
+    mockCloud({ defaultSource: 'vndb' });
+    document.documentElement.innerHTML = DOM_NO_VNDB;
+    expect(orderIn(openSettingsTab())).toEqual(['vndb', 'dlsite', 'getchu', 'steam']);
+  });
+
+  test('saved order picks the active source and orders the tags', async () => {
+    mockCloud({ sourceOrder: 'vndb,steam,getchu,dlsite' });
+    document.documentElement.innerHTML = DOM_WITH_ALL;
+    mockFetchSources([SFW_SHOT], [STEAM_SHOT]);
+    mockImageProbe(['load', 'error']);
+    loadComponent();
+    await flushPromises();
+    const gallery = document.getElementById('vndb-screenshot-gallery');
+    expect(gallery.classList.contains('dlsite-active')).toBe(false);
+    expect(gallery.classList.contains('steam-active')).toBe(false);
+    expect(document.getElementById('vndb-source-tag').classList.contains('vndb-tab-active')).toBe(true);
+    const tagOrder = Array.from(gallery.querySelectorAll('.subtitle small')).map((el) => el.id);
+    expect(tagOrder).toEqual(['vndb-source-tag', 'steam-source-tag', 'getchu-source-tag', 'dlsite-source-tag']);
+  });
+
+  test('ignores unknown names in a saved order and appends missing sources', () => {
+    mockCloud({ sourceOrder: 'steam,bogus,steam' });
+    document.documentElement.innerHTML = DOM_NO_VNDB;
+    expect(orderIn(openSettingsTab())).toEqual(['steam', 'dlsite', 'getchu', 'vndb']);
   });
 });
 

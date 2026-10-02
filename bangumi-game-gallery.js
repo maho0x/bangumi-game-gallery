@@ -70,6 +70,27 @@
     } catch(e) {}
   }
 
+  var SOURCE_NAMES = ['dlsite', 'getchu', 'steam', 'vndb'];
+  var SOURCE_LABELS = { dlsite: 'DLsite', getchu: 'Getchu', steam: 'Steam', vndb: 'VNDB' };
+
+  // Keeps known names once each, in the given order, then appends any missing
+  // ones in default order, so a stale or partial saved value still works.
+  function normalizeSourceOrder(list) {
+    var order = [];
+    (list || []).concat(SOURCE_NAMES).forEach(function (name) {
+      if (SOURCE_NAMES.indexOf(name) >= 0 && order.indexOf(name) < 0) order.push(name);
+    });
+    return order;
+  }
+
+  function getSourceOrder() {
+    var saved = cloudGet('sourceOrder');
+    if (typeof saved === 'string' && saved) return normalizeSourceOrder(saved.split(','));
+    // Earlier versions stored only a single preferred source.
+    var legacy = cloudGet('defaultSource');
+    return normalizeSourceOrder(legacy ? [legacy] : []);
+  }
+
   function getShowNsfw() {
     var v = cloudGet('showNsfw');
     return v !== null ? v === '1' : localStorage.getItem('vndb_show_nsfw') === '1';
@@ -318,7 +339,7 @@
     document.head.appendChild(style);
   }
 
-  function createGalleryShell(sourceCount) {
+  function createGalleryShell(sourceCount, order) {
     var gallery = document.createElement('div');
     gallery.id = 'vndb-screenshot-gallery';
     // Real source tags stay hidden until every source settles; skeleton pills
@@ -329,10 +350,9 @@
     gallery.innerHTML =
       '<h2 class="subtitle">游戏画廊 ' +
         tagSkeletons +
-        '<small id="dlsite-source-tag" class="grey"' + hidden + '>DLsite</small>' +
-        '<small id="getchu-source-tag" class="grey"' + hidden + '>Getchu</small>' +
-        '<small id="steam-source-tag" class="grey"' + hidden + '>Steam</small>' +
-        '<small id="vndb-source-tag" class="grey"' + hidden + '>VNDB</small>' +
+        order.map(function (name) {
+          return '<small id="' + name + '-source-tag" class="grey"' + hidden + '>' + SOURCE_LABELS[name] + '</small>';
+        }).join('') +
         '<label class="vndb-switch">' +
           '<input type="checkbox" id="vndb-nsfw-toggle">' +
           '<span class="vndb-switch-label">R18</span>' +
@@ -448,10 +468,11 @@
     gallery.classList.toggle('getchu-active', source === 'getchu');
   }
 
-  function initTabs(initialSource, sources) {
+  // `sources` lists the sources that have images, in the user's order.
+  function initTabs(sources) {
     var gallery = $('vndb-screenshot-gallery');
-    var sourceNames = ['dlsite', 'getchu', 'steam', 'vndb'];
-    var activeSource = sources.indexOf(initialSource) >= 0 ? initialSource : sources[0];
+    var sourceNames = SOURCE_NAMES;
+    var activeSource = sources[0];
 
     var tagSkeletons = gallery.querySelectorAll('.vndb-tag-skeleton');
     for (var i = 0; i < tagSkeletons.length; i++) tagSkeletons[i].parentNode.removeChild(tagSkeletons[i]);
@@ -499,28 +520,19 @@
     if (!vndbId && !dlsiteId && !steamAppId && !getchuId) return;
 
     var columnInHomeB = $('columnSubjectInHomeB') || subjectDetail.parentNode;
-    var defaultSource = cloudGet('defaultSource') || 'dlsite';
-    var hasDlsiteR18  = cloudGet('dlsiteR18') === '1';
-
-    function initialSourceFromLinks() {
-      if (defaultSource === 'vndb' && vndbId) return 'vndb';
-      if (defaultSource === 'dlsite' && dlsiteId) return 'dlsite';
-      if (defaultSource === 'steam' && steamAppId) return 'steam';
-      if (defaultSource === 'getchu' && getchuId) return 'getchu';
-      if (dlsiteId) return 'dlsite';
-      if (getchuId) return 'getchu';
-      if (steamAppId) return 'steam';
-      return 'vndb';
-    }
+    var sourceOrder  = getSourceOrder();
+    var hasDlsiteR18 = cloudGet('dlsiteR18') === '1';
+    var linkedIds    = { dlsite: dlsiteId, getchu: getchuId, steam: steamAppId, vndb: vndbId };
+    var linkedSources = sourceOrder.filter(function (name) { return linkedIds[name]; });
 
     injectStyles();
-    var gallery = createGalleryShell([vndbId, dlsiteId, steamAppId, getchuId].filter(Boolean).length);
+    var gallery = createGalleryShell(linkedSources.length, sourceOrder);
     var gallerySection = document.createElement('div');
     gallerySection.className = 'subject_section clearit';
     gallerySection.appendChild(gallery);
     columnInHomeB.parentNode.insertBefore(gallerySection, columnInHomeB.nextSibling);
 
-    setGallerySource(gallery, initialSourceFromLinks());
+    setGallerySource(gallery, linkedSources[0]);
     if (hasDlsiteR18) gallery.classList.add('dlsite-r18');
     // Apply the saved R18 state before any thumb renders, so masks never flash.
     initNsfwToggle();
@@ -554,11 +566,8 @@
       var hasDlsite = dlsiteImages.length > 0;
       var hasSteam  = steamImages.length > 0;
       var hasGetchu = getchuImages.length > 0;
-      var sources = [];
-      if (hasDlsite) sources.push('dlsite');
-      if (hasGetchu) sources.push('getchu');
-      if (hasSteam) sources.push('steam');
-      if (hasVndb) sources.push('vndb');
+      var hasImages = { dlsite: hasDlsite, getchu: hasGetchu, steam: hasSteam, vndb: hasVndb };
+      var sources = sourceOrder.filter(function (name) { return hasImages[name]; });
 
       if (!sources.length) {
         collapseAndRemove(gallerySection);
@@ -570,7 +579,7 @@
       if (!hasSteam) clearSkeletons($('steam-grid'));
       if (!hasGetchu) clearSkeletons($('getchu-grid'));
 
-      initTabs(defaultSource, sources);
+      initTabs(sources);
       lbInstance = initLightbox();
 
       if (hasDlsite) {
@@ -668,41 +677,112 @@
     onAllDone();
   }
 
+  function injectSettingsStyles() {
+    if ($('bgg-settings-styles')) return;
+    var style = document.createElement('style');
+    style.id = 'bgg-settings-styles';
+    style.textContent = [
+      '.bgg-order-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-width: 320px; }',
+      '.bgg-order-item { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border-radius: 20px; background: #fefefe; border: 1px solid #eee; }',
+      'html[data-theme=dark] .bgg-order-item { background: #6e6e6e; border-color: #7c7c7c; }',
+      '.bgg-order-item:first-child { border-color: var(--primary-color, #f09199); }',
+      '.bgg-order-rank { width: 16px; font-size: 12px; color: #999; text-align: center; }',
+      'html[data-theme=dark] .bgg-order-rank { color: #ccc; }',
+      '.bgg-order-item:first-child .bgg-order-rank { color: var(--primary-color, #f09199); font-weight: bold; }',
+      '.bgg-order-name { flex: 1; font-size: 13px; color: #000; }',
+      'html[data-theme=dark] .bgg-order-name { color: #fff; }',
+      '.bgg-order-btn { width: 26px; height: 26px; border-radius: 50%; border: 1px solid #eee; background: transparent; color: #666; cursor: pointer; font-size: 12px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; transition: all .2s ease; }',
+      'html[data-theme=dark] .bgg-order-btn { border-color: #7c7c7c; color: #ddd; }',
+      '.bgg-order-btn:hover:not(:disabled) { border-color: var(--primary-color, #f09199); color: var(--primary-color, #f09199); }',
+      '.bgg-order-btn:disabled { opacity: .3; cursor: default; }',
+      '.bgg-order-hint { margin: 8px 0 0; font-size: 12px; color: #999; }'
+    ].join('\n');
+    document.head.appendChild(style);
+  }
+
+  function renderSourceOrderItems(order) {
+    return order.map(function (name, i) {
+      var label = SOURCE_LABELS[name];
+      return '<li class="bgg-order-item" data-source="' + name + '">' +
+        '<span class="bgg-order-rank">' + (i + 1) + '</span>' +
+        '<span class="bgg-order-name">' + label + '</span>' +
+        '<button type="button" class="bgg-order-btn" data-move="-1" aria-label="上移 ' + label + '"' +
+          (i === 0 ? ' disabled' : '') + '>▲</button>' +
+        '<button type="button" class="bgg-order-btn" data-move="1" aria-label="下移 ' + label + '"' +
+          (i === order.length - 1 ? ' disabled' : '') + '>▼</button>' +
+      '</li>';
+    }).join('');
+  }
+
+  // Same markup the panel generates for its own radio options, so it inherits the native look.
+  function renderRadioSection(section, current) {
+    return '<div class="section" id="section-' + section.name + '">' +
+      '<div class="title">' + section.title + '</div>' +
+      '<div class="options-container">' +
+      section.options.map(function (option) {
+        var id = section.name + '_' + option.value;
+        return '<div class="option-item">' +
+          '<input type="radio" id="' + id + '" name="' + section.name + '" value="' + option.value + '"' +
+            (option.value === current ? ' checked' : '') + ' />' +
+          '<label for="' + id + '"><span class="radio-custom"></span>' +
+          '<span class="label-text">' + option.label + '</span></label>' +
+        '</div>';
+      }).join('') +
+      '</div></div>';
+  }
+
+  var R18_SECTION = {
+    title: 'DLsite/Getchu默认模糊R18',
+    name: 'dlsiteR18',
+    options: [
+      { value: '0', label: '关闭' },
+      { value: '1', label: '开启' }
+    ]
+  };
+
+  function renderSettingsContent() {
+    return '<div class="section" id="section-gallerySourceOrder">' +
+        '<div class="title">来源顺序</div>' +
+        '<ol class="bgg-order-list">' + renderSourceOrderItems(getSourceOrder()) + '</ol>' +
+        '<p class="bgg-order-hint">优先显示排在前面且有图片的来源，刷新页面后生效</p>' +
+      '</div>' +
+      renderRadioSection(R18_SECTION, cloudGet('dlsiteR18') || '0');
+  }
+
+  function bindSettingsContent(tabContent) {
+    tabContent.addEventListener('click', function (e) {
+      var btn = e.target.closest('.bgg-order-btn');
+      if (!btn || btn.disabled) return;
+      var order = getSourceOrder();
+      var from = order.indexOf(btn.closest('.bgg-order-item').dataset.source);
+      var to = from + parseInt(btn.dataset.move, 10);
+      if (from < 0 || to < 0 || to >= order.length) return;
+      order.splice(to, 0, order.splice(from, 1)[0]);
+      cloudSet('sourceOrder', order.join(','));
+      var list = tabContent.querySelector('.bgg-order-list');
+      list.innerHTML = renderSourceOrderItems(order);
+      // Keep keyboard focus on the moved item's same button where possible.
+      var moved = list.querySelector('[data-source="' + order[to] + '"] [data-move="' + btn.dataset.move + '"]');
+      if (moved && !moved.disabled) moved.focus();
+    });
+    tabContent.addEventListener('change', function (e) {
+      if (e.target.name === R18_SECTION.name) cloudSet('dlsiteR18', e.target.value);
+    });
+  }
+
   function registerSettings() {
     try {
       chiiLib.ukagaka.addPanelTab({
         tab: 'game_gallery',
         label: '游戏画廊',
-        type: 'options',
-        config: [
-          {
-            title: '优先显示',
-            name: 'galleryDefaultSource',
-            type: 'radio',
-            defaultValue: 'dlsite',
-            getCurrentValue: function() { return cloudGet('defaultSource') || 'dlsite'; },
-            onChange: function(value) { cloudSet('defaultSource', value); },
-            options: [
-              { value: 'dlsite', label: 'DLsite' },
-              { value: 'getchu', label: 'Getchu' },
-              { value: 'steam', label: 'Steam' },
-              { value: 'vndb', label: 'VNDB' }
-            ]
-          },
-          {
-            title: 'DLsite/Getchu默认模糊R18',
-            name: 'dlsiteR18',
-            type: 'radio',
-            defaultValue: '0',
-            getCurrentValue: function() { return cloudGet('dlsiteR18') || '0'; },
-            onChange: function(value) { cloudSet('dlsiteR18', value); },
-            options: [
-              { value: '0', label: '关闭' },
-              { value: '1', label: '开启' }
-            ]
-          }
-        ]
+        type: 'custom',
+        customContent: renderSettingsContent,
+        onInit: function (tabSelector) {
+          var tabContent = document.querySelector(tabSelector);
+          if (tabContent) bindSettingsContent(tabContent);
+        }
       });
+      injectSettingsStyles();
     } catch(e) {}
   }
 
