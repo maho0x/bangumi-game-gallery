@@ -33,6 +33,11 @@ const NSFW_SHOT = { id: 'sf2', url: 'https://s.vndb.org/sf/02/full.jpg', dims: [
 
 const DLSITE_RJ_URL = 'https://www.dlsite.com/maniax/work/=/product_id/RJ305720.html';
 const DLSITE_VJ_URL = 'https://www.dlsite.com/maniax/work/=/product_id/VJ010793.html';
+const STEAM_URL = 'https://store.steampowered.com/app/620/Portal_2/';
+const STEAM_SHOT = {
+  thumbnail: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/ss_test.600x338.jpg',
+  full: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/620/ss_test.1920x1080.jpg'
+};
 
 const DOM_WITH_DLSITE_ONLY = `<head></head><body>
   <ul id="infobox">
@@ -58,6 +63,45 @@ const DOM_WITH_BOTH = `<head></head><body>
       <span class="tip">链接: </span>
       <a href="${DLSITE_RJ_URL}">DLsite</a>
     </li>
+  </ul>
+  <div id="columnSubjectHomeB">
+    <div id="columnSubjectInHomeB">
+      <div id="subject_detail"></div>
+    </div>
+  </div>
+</body>`;
+
+const DOM_WITH_STEAM_ONLY = `<head></head><body>
+  <ul id="infobox">
+    <li class="sub_group">
+      <span class="tip">链接: </span>
+      <a href="${STEAM_URL}">Steam</a>
+    </li>
+  </ul>
+  <div id="columnSubjectHomeB">
+    <div id="columnSubjectInHomeB">
+      <div id="subject_detail"></div>
+    </div>
+  </div>
+</body>`;
+
+const DOM_WITH_ALL = `<head></head><body>
+  <ul id="infobox">
+    <li><a href="https://vndb.org/v26307">VNDB</a></li>
+    <li><a href="${DLSITE_RJ_URL}">DLsite</a></li>
+    <li><a href="${STEAM_URL}">Steam</a></li>
+  </ul>
+  <div id="columnSubjectHomeB">
+    <div id="columnSubjectInHomeB">
+      <div id="subject_detail"></div>
+    </div>
+  </div>
+</body>`;
+
+const DOM_WITH_VNDB_AND_STEAM = `<head></head><body>
+  <ul id="infobox">
+    <li><a href="https://vndb.org/v26307">VNDB</a></li>
+    <li><a href="${STEAM_URL}">Steam</a></li>
   </ul>
   <div id="columnSubjectHomeB">
     <div id="columnSubjectInHomeB">
@@ -99,8 +143,28 @@ function mockFetchError() {
   global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500 });
 }
 
+function mockFetchSources(vndbScreenshots, steamScreenshots, steamOk = true) {
+  global.fetch = jest.fn().mockImplementation((url) => {
+    if (typeof url === 'string' && url.includes('bangumi-steam-gallery.ry.mk')) {
+      return Promise.resolve({
+        ok: steamOk,
+        status: steamOk ? 200 : 502,
+        json: () => Promise.resolve({ appId: 620, screenshots: steamScreenshots || [] })
+      });
+    }
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ results: [{ id: 'v26307', screenshots: vndbScreenshots || [] }] })
+    });
+  });
+}
+
 function flushPromises() {
   return new Promise(resolve => setTimeout(resolve, 0));
+}
+
+async function flushMicrotasks() {
+  for (let i = 0; i < 8; i++) await Promise.resolve();
 }
 
 function loadComponent() {
@@ -151,7 +215,8 @@ describe('page guard', () => {
     loadComponent();
     const columnInHomeB = document.getElementById('columnSubjectInHomeB');
     const gallery = document.getElementById('vndb-screenshot-gallery');
-    expect(columnInHomeB.nextSibling).toBe(gallery);
+    expect(columnInHomeB.nextSibling).toBe(gallery.parentNode);
+    expect(gallery.parentNode.className).toBe('subject_section clearit');
   });
 
   test('fetch is called with correct VNDB ID and fields', async () => {
@@ -170,11 +235,25 @@ describe('page guard', () => {
 });
 
 describe('status states', () => {
-  test('shows loading placeholder immediately after insertion', () => {
+  test('shows skeleton placeholders immediately after insertion', () => {
     document.documentElement.innerHTML = DOM_WITH_VNDB;
     mockFetch([]);
     loadComponent();
-    expect(document.querySelector('.vndb-status').textContent).toContain('正在加载');
+    const grid = document.getElementById('vndb-grid');
+    expect(grid.querySelectorAll('.vndb-skeleton').length).toBeGreaterThan(0);
+    expect(grid.getAttribute('aria-busy')).toBe('true');
+  });
+
+  test('replaces skeletons with thumbs once screenshots load', async () => {
+    document.documentElement.innerHTML = DOM_WITH_VNDB;
+    mockFetch([SFW_SHOT]);
+    loadComponent();
+    await flushPromises();
+    const grid = document.getElementById('vndb-grid');
+    expect(grid.querySelectorAll('.vndb-skeleton').length).toBe(0);
+    expect(grid.querySelectorAll('.vndb-thumb').length).toBe(1);
+    expect(grid.hasAttribute('aria-busy')).toBe(false);
+    expect(document.querySelector('.vndb-tag-skeleton')).toBeNull();
   });
 
   test('removes gallery when VNDB returns empty and no DLsite', async () => {
@@ -393,6 +472,275 @@ describe('lightbox', () => {
   });
 });
 
+describe('Steam source', () => {
+  afterEach(() => {
+    delete global.chiiApp;
+    delete global.chiiLib;
+  });
+
+  async function setupSteamOnly(screenshots = [STEAM_SHOT], ok = true) {
+    document.documentElement.innerHTML = DOM_WITH_STEAM_ONLY;
+    mockFetchSources([], screenshots, ok);
+    loadComponent();
+    await flushPromises();
+  }
+
+  test('recognizes a Steam store link and inserts the gallery', () => {
+    document.documentElement.innerHTML = DOM_WITH_STEAM_ONLY;
+    mockFetchSources([], []);
+    loadComponent();
+    expect(document.getElementById('vndb-screenshot-gallery')).not.toBeNull();
+  });
+
+  test('recognizes Steam agecheck links', () => {
+    document.documentElement.innerHTML = DOM_WITH_STEAM_ONLY.replace(
+      STEAM_URL,
+      'https://store.steampowered.com/agecheck/app/620/'
+    );
+    mockFetchSources([], [STEAM_SHOT]);
+    loadComponent();
+    expect(document.getElementById('vndb-screenshot-gallery')).not.toBeNull();
+  });
+
+  test('requests the configured Worker endpoint with the Steam App ID', async () => {
+    await setupSteamOnly();
+    expect(fetch).toHaveBeenCalledWith(
+      'https://bangumi-steam-gallery.ry.mk/v1/steam/apps/620/screenshots'
+    );
+  });
+
+  test('renders Worker thumbnails in the Steam grid', async () => {
+    await setupSteamOnly();
+    const img = document.querySelector('#steam-grid .vndb-thumb img');
+    expect(img.src).toBe(STEAM_SHOT.thumbnail);
+    expect(document.querySelector('#steam-grid .vndb-mask')).toBeNull();
+  });
+
+  test('Steam-only gallery activates Steam and hides unavailable source tags', async () => {
+    await setupSteamOnly();
+    const gallery = document.getElementById('vndb-screenshot-gallery');
+    expect(gallery.classList.contains('steam-active')).toBe(true);
+    expect(document.getElementById('steam-source-tag').style.display).not.toBe('none');
+    expect(document.getElementById('vndb-source-tag').style.display).toBe('none');
+    expect(document.getElementById('dlsite-source-tag').style.display).toBe('none');
+  });
+
+  test('clicking a Steam thumbnail opens the full image in the lightbox', async () => {
+    await setupSteamOnly();
+    document.querySelector('#steam-grid .vndb-thumb').click();
+    expect(document.getElementById('vndb-lightbox').style.display).not.toBe('none');
+    expect(document.getElementById('vndb-lb-img').src).toBe(STEAM_SHOT.full);
+  });
+
+  test('removes the gallery when Steam is the only source and returns no screenshots', async () => {
+    await setupSteamOnly([]);
+    expect(document.getElementById('vndb-screenshot-gallery')).toBeNull();
+  });
+
+  test('keeps other sources when the Steam Worker fails', async () => {
+    document.documentElement.innerHTML = DOM_WITH_ALL;
+    mockFetchSources([SFW_SHOT], [], false);
+    mockImageProbe(['error']);
+    loadComponent();
+    await flushPromises();
+    expect(document.querySelectorAll('#vndb-grid .vndb-thumb').length).toBe(1);
+    expect(document.getElementById('steam-source-tag').style.display).toBe('none');
+  });
+
+  test('switches among VNDB, DLsite and Steam tabs', async () => {
+    document.documentElement.innerHTML = DOM_WITH_ALL;
+    mockFetchSources([SFW_SHOT], [STEAM_SHOT]);
+    mockImageProbe(['load', 'error']);
+    loadComponent();
+    await flushPromises();
+
+    const gallery = document.getElementById('vndb-screenshot-gallery');
+    expect(document.getElementById('steam-source-tag').classList.contains('vndb-tab')).toBe(true);
+    document.getElementById('steam-source-tag').click();
+    expect(gallery.classList.contains('steam-active')).toBe(true);
+    expect(gallery.classList.contains('dlsite-active')).toBe(false);
+    document.getElementById('vndb-source-tag').click();
+    expect(gallery.classList.contains('steam-active')).toBe(false);
+    expect(gallery.classList.contains('dlsite-active')).toBe(false);
+  });
+
+  test('honors Steam as the configured default source', async () => {
+    global.chiiApp = {
+      cloud_settings: {
+        get: (key) => key === 'defaultSource' ? 'steam' : null,
+        update: jest.fn(),
+        save: jest.fn()
+      }
+    };
+    document.documentElement.innerHTML = DOM_WITH_ALL;
+    mockFetchSources([SFW_SHOT], [STEAM_SHOT]);
+    mockImageProbe(['load', 'error']);
+    loadComponent();
+    await flushPromises();
+    expect(document.getElementById('vndb-screenshot-gallery').classList.contains('steam-active')).toBe(true);
+  });
+
+  test('offers Steam in the default-source settings', () => {
+    const addPanelTab = jest.fn();
+    global.chiiLib = { ukagaka: { addPanelTab } };
+    document.documentElement.innerHTML = DOM_NO_VNDB;
+    loadComponent();
+    const panel = addPanelTab.mock.calls[0][0];
+    const setting = panel.config.find((item) => item.name === 'galleryDefaultSource');
+    expect(setting.options).toContainEqual({ value: 'steam', label: 'Steam' });
+  });
+});
+
+describe('Getchu source', () => {
+  const GETCHU_URL = 'http://www.getchu.com/soft.phtml?id=1076201';
+  const GETCHU_BASE = 'https://bangumi-steam-gallery.ry.mk/v1/getchu/items/1076201/samples';
+  const GETCHU_SHOT = { thumbnail: GETCHU_BASE + '/1_s.jpg', full: GETCHU_BASE + '/1.jpg' };
+  const domWith = (links) => `<head></head><body>
+    <ul id="infobox">${links.map((href) => `<li><a href="${href}">link</a></li>`).join('')}</ul>
+    <div id="columnSubjectHomeB">
+      <div id="columnSubjectInHomeB">
+        <div id="subject_detail"></div>
+      </div>
+    </div>
+  </body>`;
+
+  function mockGetchuFetch(samples, ok = true, vndbScreenshots = []) {
+    global.fetch = jest.fn().mockImplementation((url) => {
+      if (url.includes('/v1/getchu/')) {
+        return Promise.resolve({
+          ok,
+          status: ok ? 200 : 502,
+          json: () => Promise.resolve({ id: 1076201, samples })
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ results: [{ id: 'v26307', screenshots: vndbScreenshots }] })
+      });
+    });
+  }
+
+  async function setupGetchuOnly(samples = [GETCHU_SHOT], ok = true, href = GETCHU_URL) {
+    document.documentElement.innerHTML = domWith([href]);
+    mockGetchuFetch(samples, ok);
+    loadComponent();
+    await flushPromises();
+  }
+
+  afterEach(() => {
+    delete global.chiiApp;
+  });
+
+  test('requests the Worker samples endpoint for soft.phtml links', async () => {
+    await setupGetchuOnly();
+    expect(fetch).toHaveBeenCalledWith(GETCHU_BASE);
+  });
+
+  test('recognizes /item/{id}/ links', async () => {
+    await setupGetchuOnly([GETCHU_SHOT], true, 'https://www.getchu.com/item/1076201/?gc=gc');
+    expect(fetch).toHaveBeenCalledWith(GETCHU_BASE);
+  });
+
+  test('renders proxied thumbnails and activates the Getchu tab', async () => {
+    await setupGetchuOnly();
+    const gallery = document.getElementById('vndb-screenshot-gallery');
+    expect(gallery.classList.contains('getchu-active')).toBe(true);
+    expect(document.querySelector('#getchu-grid .vndb-thumb img').src).toBe(GETCHU_SHOT.thumbnail);
+    expect(document.querySelector('#getchu-grid .vndb-mask')).toBeNull();
+    expect(document.getElementById('getchu-source-tag').style.display).not.toBe('none');
+  });
+
+  test('clicking a Getchu thumbnail opens the full image in the lightbox', async () => {
+    await setupGetchuOnly();
+    document.querySelector('#getchu-grid .vndb-thumb').click();
+    expect(document.getElementById('vndb-lb-img').src).toBe(GETCHU_SHOT.full);
+  });
+
+  test('removes the gallery when Getchu is the only source and has no samples', async () => {
+    await setupGetchuOnly([]);
+    expect(document.getElementById('vndb-screenshot-gallery')).toBeNull();
+  });
+
+  test('keeps VNDB when the Getchu Worker fails', async () => {
+    document.documentElement.innerHTML = domWith(['https://vndb.org/v26307', GETCHU_URL]);
+    mockGetchuFetch([], false, [SFW_SHOT]);
+    loadComponent();
+    await flushPromises();
+    expect(document.querySelectorAll('#vndb-grid .vndb-thumb').length).toBe(1);
+    expect(document.getElementById('getchu-source-tag').style.display).toBe('none');
+  });
+
+  test('getchu as default source is active when both VNDB and Getchu have images', async () => {
+    global.chiiApp = { cloud_settings: { get: (k) => (k === 'defaultSource' ? 'getchu' : null), update() {}, save() {} } };
+    document.documentElement.innerHTML = domWith(['https://vndb.org/v26307', GETCHU_URL]);
+    mockGetchuFetch([GETCHU_SHOT], true, [SFW_SHOT]);
+    loadComponent();
+    await flushPromises();
+    const gallery = document.getElementById('vndb-screenshot-gallery');
+    expect(gallery.classList.contains('getchu-active')).toBe(true);
+    expect(document.getElementById('getchu-source-tag').classList.contains('vndb-tab-active')).toBe(true);
+  });
+
+  test('blurs Getchu thumbs when the R18 blur setting is on and the toggle reveals them', async () => {
+    global.chiiApp = { cloud_settings: { get: (k) => (k === 'dlsiteR18' ? '1' : null), update() {}, save() {} } };
+    await setupGetchuOnly();
+    expect(document.querySelector('#getchu-grid .vndb-mask')).not.toBeNull();
+    document.getElementById('vndb-nsfw-toggle').click();
+    expect(document.getElementById('getchu-grid').classList.contains('show-nsfw')).toBe(true);
+  });
+});
+
+describe('source timeouts', () => {
+  test('a hanging Steam request does not permanently block VNDB', async () => {
+    jest.useFakeTimers();
+    try {
+      document.documentElement.innerHTML = DOM_WITH_VNDB_AND_STEAM;
+      global.fetch = jest.fn().mockImplementation((url) => {
+        if (typeof url === 'string' && url.includes('bangumi-steam-gallery.ry.mk')) {
+          return new Promise(() => {});
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ results: [{ id: 'v26307', screenshots: [SFW_SHOT] }] })
+        });
+      });
+
+      loadComponent();
+      await flushMicrotasks();
+      jest.advanceTimersByTime(10000);
+      await flushMicrotasks();
+
+      expect(document.querySelectorAll('#vndb-grid .vndb-thumb').length).toBe(1);
+      expect(document.getElementById('steam-source-tag').style.display).toBe('none');
+      expect(document.getElementById('vndb-lightbox')).not.toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test('a hanging DLsite image probe does not permanently block VNDB', async () => {
+    jest.useFakeTimers();
+    try {
+      document.documentElement.innerHTML = DOM_WITH_BOTH;
+      mockFetch([SFW_SHOT]);
+      global.Image = function () {
+        Object.defineProperty(this, 'src', { set() {} });
+      };
+
+      loadComponent();
+      await flushMicrotasks();
+      jest.advanceTimersByTime(4000);
+      await flushMicrotasks();
+
+      expect(document.querySelectorAll('#vndb-grid .vndb-thumb').length).toBe(1);
+      expect(document.getElementById('dlsite-source-tag').style.display).toBe('none');
+      expect(document.getElementById('vndb-lightbox')).not.toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});
+
 describe('DLsite URL construction', () => {
   test('probes correct main URL for RJ id', () => {
     document.documentElement.innerHTML = DOM_WITH_DLSITE_ONLY;
@@ -516,7 +864,7 @@ describe('loading coordination', () => {
     expect(document.getElementById('vndb-screenshot-gallery')).toBeNull();
   });
 
-  test('DLsite tab and loading placeholder visible immediately when both IDs present', async () => {
+  test('source tags stay hidden and DLsite skeletons show while sources load', async () => {
     document.documentElement.innerHTML = DOM_WITH_BOTH;
     mockFetch([SFW_SHOT]);
     let probeResolve;
@@ -527,9 +875,10 @@ describe('loading coordination', () => {
       });
     };
     loadComponent();
-    /* Before probe completes: DLsite tab visible and loading placeholder in dlsite-grid */
-    expect(document.getElementById('dlsite-source-tag').style.display).not.toBe('none');
-    expect(document.querySelector('#dlsite-grid .vndb-status')).not.toBeNull();
+    /* Before probe completes: tags hidden (avoids header reflow), skeletons in dlsite-grid */
+    expect(document.getElementById('dlsite-source-tag').style.display).toBe('none');
+    expect(document.querySelectorAll('.subtitle .vndb-tag-skeleton').length).toBe(2);
+    expect(document.querySelector('#dlsite-grid .vndb-skeleton')).not.toBeNull();
     global.Image = OriginalImage;
   });
 
@@ -578,7 +927,9 @@ describe('loading coordination', () => {
     mockImageProbe(['load', 'error']);
     loadComponent();
     const col = document.getElementById('columnSubjectInHomeB');
-    expect(col.nextSibling).toBe(document.getElementById('vndb-screenshot-gallery'));
+    const gallery = document.getElementById('vndb-screenshot-gallery');
+    expect(col.nextSibling).toBe(gallery.parentNode);
+    expect(gallery.parentNode.className).toBe('subject_section clearit');
   });
 });
 
